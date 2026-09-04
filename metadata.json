@@ -1,0 +1,6 @@
+{
+  "name": "Auto Sale Antwerpen",
+  "description": "Exclusieve en jonge premium tweedehandswagens in Antwerpen met Traxio-garantie, Car-Pass en complete overnameservice.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

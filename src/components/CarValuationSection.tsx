@@ -16,7 +16,13 @@ import confetti from 'canvas-confetti';
 import { ValuationFormState } from '../types';
 import { DEALERSHIP_INFO } from '../data/dealership';
 
-export const CarValuationSection: React.FC = () => {
+interface CarValuationSectionProps {
+  onValuationSubmit?: (data: ValuationFormState, referenceNumber: string) => void;
+}
+
+export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
+  onValuationSubmit
+}) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [referenceNumber, setReferenceNumber] = useState('');
@@ -51,6 +57,9 @@ export const CarValuationSection: React.FC = () => {
       const ref = 'AS-TAX-' + Math.floor(100000 + Math.random() * 900000);
       setReferenceNumber(ref);
       setIsSubmitted(true);
+      if (onValuationSubmit) {
+        onValuationSubmit(formData, ref);
+      }
       confetti({
         particleCount: 80,
         spread: 70,

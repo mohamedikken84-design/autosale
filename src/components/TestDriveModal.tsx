@@ -20,13 +20,15 @@ interface TestDriveModalProps {
   onClose: () => void;
   selectedCar: Car | null;
   allCars: Car[];
+  onBookingSuccess?: (booking: TestDriveBooking) => void;
 }
 
 export const TestDriveModal: React.FC<TestDriveModalProps> = ({
   isOpen,
   onClose,
   selectedCar,
-  allCars
+  allCars,
+  onBookingSuccess
 }) => {
   const [activeCarId, setActiveCarId] = useState<string>(selectedCar ? selectedCar.id : (allCars[0]?.id || ''));
   const [formData, setFormData] = useState<TestDriveBooking>({
@@ -66,6 +68,9 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
       spread: 60,
       origin: { y: 0.6 }
     });
+    if (onBookingSuccess) {
+      onBookingSuccess(formData);
+    }
   };
 
   const timeSlots = ['10:30', '11:45', '14:00', '15:15', '16:30', '17:45'];

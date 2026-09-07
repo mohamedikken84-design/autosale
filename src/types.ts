@@ -2,6 +2,9 @@ export type FuelType = 'Benzine' | 'Diesel' | 'Plug-in Hybride' | 'Elektrisch' |
 export type TransmissionType = 'Automaat' | 'Manueel';
 export type BodyType = 'SUV / 4x4' | 'Berline' | 'Coupé' | 'Break' | 'Camper';
 export type Category = 'premium' | 'hybrid-electric' | 'export-handelaar' | 'all';
+export type Language = 'nl' | 'en' | 'fr' | 'de';
+export type Currency = 'EUR' | 'GBP' | 'CHF' | 'USD';
+export type UserRole = 'admin' | 'sales';
 
 export interface Car {
   id: string;
@@ -24,6 +27,8 @@ export interface Car {
   co2?: number; // g/km
   euroStandard?: string; // e.g. Euro 6d-ISC-FCM
   images: string[];
+  videoUrl?: string; // e.g. YouTube, Vimeo or direct MP4 link
+  licensePlate?: string;
   featured?: boolean;
   category: Category;
   carPassId: string;
@@ -32,6 +37,61 @@ export interface Car {
   options: string[];
   description: string;
   status: 'available' | 'reserved' | 'sold';
+  deletedAt?: string; // ISO date string when soft-deleted, auto-purged after 3 days
+  viewsCount?: number;
+  branchId?: string;
+}
+
+export interface Branch {
+  id: string;
+  name: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  country: string;
+  phone: string;
+  email: string;
+  isMain?: boolean;
+}
+
+export interface DealershipSettings {
+  name: string;
+  legalName?: string;
+  owner?: string;
+  vatNumber?: string;
+  slogan?: string;
+  phone: string;
+  phoneRaw: string;
+  whatsapp: string;
+  email: string;
+  salesEmail?: string;
+  address?: string;
+  street?: string;
+  zipCode?: string;
+  postalCode?: string;
+  city: string;
+  country?: string;
+  googleMapsUrl: string;
+  autoscoutUrl?: string;
+  autoscoutDealerUrl?: string;
+  tiktokUrl?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  showroomImageUrl?: string;
+  branches?: Branch[];
+}
+
+export interface LeadInquiry {
+  id: string;
+  date: string;
+  type: 'test-drive' | 'valuation' | 'contact' | 'whatsapp';
+  carId?: string;
+  carTitle?: string;
+  name: string;
+  email: string;
+  phone: string;
+  message?: string;
+  status: 'new' | 'contacted' | 'closed';
 }
 
 export interface FilterState {

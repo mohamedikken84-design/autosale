@@ -13,9 +13,8 @@ export const DealerLoginModal: React.FC<DealerLoginModalProps> = ({
   onClose,
   onLoginSuccess,
 }) => {
-  const [username, setUsername] = useState('autosale2660');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('admin');
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
@@ -29,11 +28,11 @@ export const DealerLoginModal: React.FC<DealerLoginModalProps> = ({
     const validPassword = password === 'Linkerbaan.40' || password === 'autosale2026' || password === 'admin';
 
     if (!validUsername || !validPassword) {
-      setError('Ongeldige inloggegevens. Gebruikersnaam: autosale2660 | Wachtwoord: Linkerbaan.40');
+      setError('Ongeldige gebruikersnaam of wachtwoord. Probeer het opnieuw.');
       return;
     }
 
-    onLoginSuccess(role, username);
+    onLoginSuccess('admin', username.trim() || 'Michel / Beheerder');
     onClose();
   };
 
@@ -62,7 +61,7 @@ export const DealerLoginModal: React.FC<DealerLoginModalProps> = ({
               Dealer Beheerportaal
             </h3>
             <p className="text-xs text-gray-400 font-medium">
-              Beveiligde toegang voor Auto Sale directie & verkoop
+              Beveiligde toegang voor directie & beheer
             </p>
           </div>
         </div>
@@ -74,36 +73,6 @@ export const DealerLoginModal: React.FC<DealerLoginModalProps> = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Role selector */}
-          <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-gray-400 mb-1.5">
-              Gebruikersrol
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setRole('admin')}
-                className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer font-bold ${
-                  role === 'admin'
-                    ? 'border-[#FF6B00] bg-[#FF6B00]/10 text-white'
-                    : 'border-zinc-800 bg-zinc-900/50 text-gray-400 hover:bg-zinc-800'
-                }`}
-              >
-                Beheerder (Volledig)
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('sales')}
-                className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer font-bold ${
-                  role === 'sales'
-                    ? 'border-[#FF6B00] bg-[#FF6B00]/10 text-white'
-                    : 'border-zinc-800 bg-zinc-900/50 text-gray-400 hover:bg-zinc-800'
-                }`}
-              >
-                Verkoper (Beperkt)
-              </button>
-            </div>
-          </div>
 
           <div>
             <label className="block text-[11px] font-black uppercase tracking-wider text-gray-400 mb-1.5">
@@ -126,10 +95,11 @@ export const DealerLoginModal: React.FC<DealerLoginModalProps> = ({
             <input
               type="password"
               required
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Wachtwoord (Linkerbaan.40)"
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+              placeholder="••••••••"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-[#FF6B00] focus:outline-none tracking-wider"
             />
           </div>
 

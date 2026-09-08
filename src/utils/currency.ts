@@ -15,6 +15,10 @@ const SYMBOLS: Record<Currency, string> = {
   USD: '$',
 };
 
+export function getCurrencySymbol(currency: Currency = 'EUR'): string {
+  return SYMBOLS[currency] || '€';
+}
+
 export function convertPrice(amountInEur: number, targetCurrency: Currency): number {
   const rate = RATES[targetCurrency] || 1;
   return Math.round(amountInEur * rate);

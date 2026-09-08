@@ -10,14 +10,24 @@ import {
   ArrowUp
 } from 'lucide-react';
 import { DEALERSHIP_INFO } from '../data/dealership';
-import { DealershipSettings } from '../types';
+import { DealershipSettings, Language } from '../types';
+import { TRANSLATIONS } from '../i18n/translations';
 
 interface FooterProps {
   onNavigate: (sectionId: string) => void;
   dealershipSettings?: DealershipSettings;
+  language?: Language;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }) => {
+export const Footer: React.FC<FooterProps> = ({ 
+  onNavigate, 
+  dealershipSettings,
+  language = 'nl'
+}) => {
+  const t = TRANSLATIONS[language]?.footer || TRANSLATIONS.nl.footer;
+  const tNav = TRANSLATIONS[language]?.nav || TRANSLATIONS.nl.nav;
+  const tReviews = TRANSLATIONS[language]?.reviews || TRANSLATIONS.nl.reviews;
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -57,7 +67,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }
             </div>
 
             <p className="text-gray-400 text-xs leading-relaxed max-w-sm font-medium">
-              Al meer dan 25 jaar uw toonaangevende specialist in exclusieve, jonge tweedehandswagens in Antwerpen. Erkend Traxio lid met 100% Car-Pass kwaliteitsgarantie.
+              {t.aboutText}
             </p>
 
             {/* Social Media Links */}
@@ -109,7 +119,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }
           {/* Col 2: Snelle Links */}
           <div className="space-y-2 sm:space-y-3">
             <h4 className="text-white font-black text-xs font-['Outfit',sans-serif] uppercase tracking-widest">
-              Navigatie
+              {t.navigation}
             </h4>
             <ul className="space-y-1.5 sm:space-y-2 text-xs font-medium">
               <li>
@@ -117,7 +127,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }
                   onClick={() => onNavigate('stock')}
                   className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer"
                 >
-                  Onze Wagens (Stock)
+                  {tNav.stock}
                 </button>
               </li>
               <li>
@@ -125,7 +135,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }
                   onClick={() => onNavigate('overname')}
                   className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer"
                 >
-                  Auto Verkopen / Overname
+                  {tNav.valuation}
                 </button>
               </li>
               <li>
@@ -133,7 +143,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }
                   onClick={() => onNavigate('financiering')}
                   className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer"
                 >
-                  Financieringscalculator
+                  {tNav.financing}
                 </button>
               </li>
               <li>
@@ -141,7 +151,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }
                   onClick={() => onNavigate('garantie')}
                   className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer"
                 >
-                  Traxio Garantie (12-24 mnd)
+                  {tNav.warranty}
                 </button>
               </li>
               <li>
@@ -149,7 +159,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }
                   onClick={() => onNavigate('over-ons')}
                   className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer"
                 >
-                  Over Auto Sale (1999)
+                  {tNav.about}
                 </button>
               </li>
             </ul>
@@ -158,7 +168,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }
           {/* Col 3: Contact Details */}
           <div className="space-y-2 sm:space-y-3">
             <h4 className="text-white font-black text-xs font-['Outfit',sans-serif] uppercase tracking-widest">
-              Contact & Route
+              {tReviews.contactTitle}
             </h4>
             <ul className="space-y-2 text-xs font-medium">
               <li>
@@ -199,24 +209,20 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }
           {/* Col 4: Openingsuren */}
           <div className="space-y-2 sm:space-y-3">
             <h4 className="text-white font-black text-xs font-['Outfit',sans-serif] uppercase tracking-widest">
-              Openingsuren
+              {tReviews.openingHoursTitle}
             </h4>
             <div className="space-y-1.5 sm:space-y-2 text-xs font-medium">
-              <div className="flex justify-between">
-                <span>Maandag - Donderdag:</span>
-                <span className="text-white font-bold">10:00 - 19:00</span>
+              <div className="text-gray-300">
+                {tReviews.monThu}
               </div>
-              <div className="flex justify-between">
-                <span>Vrijdag:</span>
-                <span className="text-white font-bold">10:00 - 16:30</span>
+              <div className="text-gray-300">
+                {tReviews.friday}
               </div>
-              <div className="flex justify-between">
-                <span>Zaterdag:</span>
-                <span className="text-[#FF6B00] font-bold">Op afspraak</span>
+              <div className="text-gray-300">
+                {tReviews.saturday}
               </div>
-              <div className="flex justify-between">
-                <span>Zondag:</span>
-                <span className="text-gray-500">Gesloten</span>
+              <div className="text-gray-400">
+                {tReviews.sunday}
               </div>
             </div>
             <div className="pt-1 text-[11px] text-gray-500 font-semibold">
@@ -230,19 +236,15 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, dealershipSettings }
       <div className="border-t border-zinc-800 bg-black/60 py-3 sm:py-4 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 text-[10px] sm:text-[11px] text-gray-500 font-medium">
           <div>
-            © {new Date().getFullYear()} {DEALERSHIP_INFO.legalName} • Alle rechten voorbehouden.
+            © {new Date().getFullYear()} {DEALERSHIP_INFO.legalName} • {t.rights}
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            <span>Algemene Verkoopsvoorwaarden</span>
-            <span>•</span>
-            <span>Privacybeleid</span>
-            <span>•</span>
             <button
               onClick={scrollToTop}
               className="inline-flex items-center gap-1 text-gray-400 hover:text-[#FF6B00] transition-colors cursor-pointer"
             >
-              <span>Naar boven</span>
+              <span>↑</span>
               <ArrowUp className="w-3.5 h-3.5" />
             </button>
           </div>

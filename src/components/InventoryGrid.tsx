@@ -22,7 +22,6 @@ interface InventoryGridProps {
   currency: Currency;
   dealershipSettings: DealershipSettings;
   onOpenDealerLogin: () => void;
-  onLoadSampleCars?: () => void;
   onConciergeSubmit?: (data: { brand: string; model: string; maxBudget: string; name: string; phone: string; email: string }) => void;
 }
 
@@ -40,7 +39,6 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
   currency,
   dealershipSettings,
   onOpenDealerLogin,
-  onLoadSampleCars,
   onConciergeSubmit
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -54,6 +52,8 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
   const [conciergeSubmitted, setConciergeSubmitted] = useState(false);
 
   const t = TRANSLATIONS[language]?.inventory || TRANSLATIONS.nl.inventory;
+  const tHero = TRANSLATIONS[language]?.hero || TRANSLATIONS.nl.hero;
+  const tValuation = TRANSLATIONS[language]?.valuation || TRANSLATIONS.nl.valuation;
 
   const availableCarsCount = cars.filter((c) => c.status !== 'sold').length;
   const soldCarsCount = cars.filter((c) => c.status === 'sold').length;
@@ -78,10 +78,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
   };
 
   const categoryTabs: { id: Category; label: string }[] = [
-    { id: 'all', label: t.tabAll },
-    { id: 'premium', label: t.tabPremium },
-    { id: 'hybrid-electric', label: t.tabEco },
-    { id: 'export-handelaar', label: t.tabExport }
+    { id: 'all', label: t.tabAll }
   ];
 
   const hasActiveFilters = 
@@ -103,12 +100,10 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
               <span>{dealershipSettings.city} • Antwerpen</span>
             </div>
             <h2 className="text-2xl sm:text-4xl font-black text-zinc-950 font-['Outfit',sans-serif] tracking-tight">
-              {stockView === 'sold' ? 'Recent Verkochte Wagens' : t.title}
+              {stockView === 'sold' ? t.soldTitle : t.title}
             </h2>
             <p className="mt-0.5 text-xs sm:text-sm text-zinc-500 max-w-xl">
-              {stockView === 'sold'
-                ? 'Bekijk de exclusieve wagens die recent door Auto Sale NV zijn geleverd aan tevreden particulieren en ondernemers.'
-                : t.subtitle}
+              {stockView === 'sold' ? t.soldSubtitle : t.subtitle}
             </p>
           </div>
 
@@ -125,7 +120,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
                     : 'text-zinc-600 hover:text-zinc-950'
                 }`}
               >
-                Actueel ({availableCarsCount})
+                {t.currentStock} ({availableCarsCount})
               </button>
               <button
                 type="button"
@@ -137,7 +132,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
                 }`}
               >
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Verkocht ({soldCarsCount})</span>
+                <span>{t.soldStock} ({soldCarsCount})</span>
               </button>
             </div>
 
@@ -146,7 +141,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
                 <select
                   value={filterState.sortBy}
                   onChange={(e) => onFilterChange({ sortBy: e.target.value as any })}
-                  aria-label="Sorteer wagens"
+                  aria-label={t.sortBy}
                   className="bg-zinc-50 border border-zinc-200 text-zinc-900 text-xs font-bold rounded-xl px-3 py-1.5 sm:py-2 pr-7 appearance-none focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                 >
                   <option value="featured">{t.sortFeatured}</option>
@@ -210,10 +205,10 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
                 <select
                   value={filterState.brand}
                   onChange={(e) => onFilterChange({ brand: e.target.value })}
-                  aria-label="Filter op merk"
+                  aria-label={tHero.brand}
                   className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-xs font-bold rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                 >
-                  <option value="">Alle Merken</option>
+                  <option value="">{tHero.allBrands}</option>
                   {availableBrands.map((b) => (
                     <option key={b} value={b}>{b}</option>
                   ))}
@@ -256,44 +251,44 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
               {/* Brandstof */}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                  Brandstoftype
+                  {t.fuelType}
                 </label>
                 <select
                   value={filterState.fuel}
                   onChange={(e) => onFilterChange({ fuel: e.target.value })}
                   className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-xs font-bold rounded-2xl px-3.5 py-2.5"
                 >
-                  <option value="">Alle brandstoffen</option>
-                  <option value="Plug-in Hybride">Plug-in Hybride</option>
-                  <option value="Elektrisch">Elektrisch</option>
-                  <option value="Benzine">Benzine</option>
-                  <option value="Diesel">Diesel</option>
+                  <option value="">{tHero.allFuels}</option>
+                  <option value="Plug-in Hybride">{tHero.hybrid}</option>
+                  <option value="Elektrisch">{tHero.electric}</option>
+                  <option value="Benzine">{tHero.petrol}</option>
+                  <option value="Diesel">{tHero.diesel}</option>
                 </select>
               </div>
 
               {/* Transmissie */}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                  Transmissie
+                  {t.transmission}
                 </label>
                 <select
                   value={filterState.transmission}
                   onChange={(e) => onFilterChange({ transmission: e.target.value })}
                   className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-xs font-bold rounded-2xl px-3.5 py-2.5"
                 >
-                  <option value="">Alle versnellingsbakken</option>
-                  <option value="Automaat">Automaat</option>
-                  <option value="Manueel">Manueel</option>
+                  <option value="">{t.allTransmissions}</option>
+                  <option value="Automaat">{t.automatic}</option>
+                  <option value="Handgeschakeld">{t.manual}</option>
                 </select>
               </div>
 
               {/* Maximaal Budget Slider */}
               <div>
                 <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                  <span>Max. Prijs:</span>
+                  <span>{t.maxBudget}:</span>
                   <span className="font-black text-[#FF6B00]">
                     {filterState.maxPrice >= 250000 
-                      ? 'Geen limiet' 
+                      ? tHero.noLimit 
                       : `€${filterState.maxPrice.toLocaleString('nl-BE')}`}
                   </span>
                 </div>
@@ -346,161 +341,165 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
           </div>
         ) : (
           /* Enhanced Active Showroom Concierge when Stock is Fresh */
-          <div className="space-y-8">
-            {/* Top Status & Sample Car Loader Bar */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-zinc-200/90 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-black/5 border border-zinc-200 p-1.5 flex items-center justify-center shrink-0 shadow-xs">
-                  <img src="/logo2.png" alt="Auto Sale Logo" className="w-full h-full object-contain" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-100 text-[#FF6B00] font-black text-[10px] uppercase tracking-wider">
-                      <Sparkles className="w-3 h-3" />
-                      Wagenpark in continue vernieuwing
-                    </span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-zinc-950 font-['Outfit',sans-serif] tracking-tight mt-0.5">
-                    Zoekt u een specifieke premium wagen?
-                  </h3>
-                  <p className="text-xs text-zinc-500 max-w-xl mt-0.5 leading-relaxed">
-                    Nieuwe directiewagens en exclusieve overnames komen dagelijks binnen. 
-                    Gebruik onze gratis Auto Sale Concierge of laad direct de voorbeeldcollectie.
-                  </p>
-                </div>
-              </div>
-
-              {onLoadSampleCars && (
-                <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
-                  <button
-                    onClick={onLoadSampleCars}
-                    className="w-full md:w-auto px-5 py-3 rounded-2xl bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Car className="w-4 h-4" />
-                    <span>Toon Voorbeeldcollectie (5 Wagens)</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* 2-Column Bento: Car Concierge Form & Expected Arrivals */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-              {/* Left Col: Zoekopdracht op Maat (7 cols) */}
-              <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-zinc-200/90 shadow-sm flex flex-col justify-between">
-                <div>
-                  <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#FF6B00] mb-2">
-                    <Search className="w-3.5 h-3.5" />
-                    <span>Auto Sale Car Concierge</span>
-                  </div>
-                  <h4 className="text-lg font-black text-zinc-950 font-['Outfit',sans-serif]">
-                    Gratis Zoekopdracht op Maat
-                  </h4>
-                  <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-                    Heeft u een specifiek merk, model of optiepakket in gedachten? Ons netwerk in België en Duitsland zoekt binnen 24 uur uw droomwagen met Car-Pass en garantie.
-                  </p>
-
-                  {conciergeSubmitted ? (
-                    <div className="my-6 p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
-                      <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-                      <div className="font-bold text-zinc-900 text-sm">Aanvraag succesvol ontvangen!</div>
-                      <p className="text-xs text-zinc-600">
-                        Ons salesteam neemt binnen 24 uur contact met u op met een passend voorstel.
+          <div className="space-y-6">
+            {/* Car Concierge Search Request Card */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-zinc-200/90 shadow-sm">
+              <div className="max-w-4xl mx-auto">
+                {/* Header with Logo & Title */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-100">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-black/5 border border-zinc-200 p-1.5 flex items-center justify-center shrink-0 shadow-xs">
+                      <img src="/logo2.png" alt="Auto Sale Logo" className="w-full h-full object-contain" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-100 text-[#FF6B00] font-black text-[10px] uppercase tracking-wider">
+                          <Sparkles className="w-3 h-3" />
+                          Auto Sale Concierge
+                        </span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-black text-zinc-950 font-['Outfit',sans-serif] tracking-tight mt-0.5">
+                        {t.conciergeTitle}
+                      </h3>
+                      <p className="text-xs text-zinc-500 max-w-xl mt-0.5 leading-relaxed">
+                        {t.conciergeSubtitle}
                       </p>
                     </div>
-                  ) : (
-                    <form onSubmit={handleConciergeFormSubmit} className="mt-4 space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">Gewenst Merk</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="bv. Porsche, BMW, Mercedes"
-                            value={conciergeBrand}
-                            onChange={(e) => setConciergeBrand(e.target.value)}
-                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">Model / Uitvoering</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="bv. Taycan, M4, G 63"
-                            value={conciergeModel}
-                            onChange={(e) => setConciergeModel(e.target.value)}
-                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">Richtbudget (€)</label>
-                          <input
-                            type="text"
-                            placeholder="bv. € 65.000"
-                            value={conciergeBudget}
-                            onChange={(e) => setConciergeBudget(e.target.value)}
-                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
-                          />
-                        </div>
-                      </div>
+                  </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">Uw Naam</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="Voor- en achternaam"
-                            value={conciergeName}
-                            onChange={(e) => setConciergeName(e.target.value)}
-                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">Telefoonnummer</label>
-                          <input
-                            type="tel"
-                            required
-                            placeholder="+32 4..."
-                            value={conciergePhone}
-                            onChange={(e) => setConciergePhone(e.target.value)}
-                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">E-mailadres</label>
-                          <input
-                            type="email"
-                            required
-                            placeholder="naam@voorbeeld.be"
-                            value={conciergeEmail}
-                            onChange={(e) => setConciergeEmail(e.target.value)}
-                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                        <span className="text-[11px] text-zinc-400 flex items-center gap-1.5">
-                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                          Geheel vrijblijvend & binnen 24 uur antwoord
-                        </span>
-
-                        <button
-                          type="submit"
-                          className="px-5 py-2.5 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-colors"
-                        >
-                          <Send className="w-3.5 h-3.5 text-[#FF6B00]" />
-                          <span>Verstuur Zoekopdracht</span>
-                        </button>
-                      </div>
-                    </form>
-                  )}
+                  {/* Direct Contact Action Buttons (Call & WhatsApp) */}
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <a
+                      href={`https://wa.me/${dealershipSettings.whatsapp.replace(/[^0-9]/g, '')}?text=Hallo%20Auto%20Sale%2C%20ik%20heb%20een%20specifieke%20zoekopdracht%20voor%20een%20wagen.`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-sm shadow-emerald-500/20 cursor-pointer"
+                    >
+                      <MessageCircle className="w-4 h-4 fill-white" />
+                      <span>WhatsApp Bericht</span>
+                    </a>
+                    <a
+                      href={`tel:${dealershipSettings.phoneRaw}`}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-black text-white font-bold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                    >
+                      <Phone className="w-4 h-4 text-[#FF6B00]" />
+                      <span>Bellen</span>
+                    </a>
+                  </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-500">
-                  <span>Of direct advies van onze zaakvoerder:</span>
-                  <div className="flex items-center gap-3">
+                {/* Subtitle intro */}
+                <div className="pt-6">
+                  <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#FF6B00] mb-1">
+                    <Search className="w-3.5 h-3.5" />
+                    <span>Auto Zoekservice op Maat</span>
+                  </div>
+                  <h4 className="text-lg font-black text-zinc-950 font-['Outfit',sans-serif]">
+                    Laat ons de perfecte wagen voor u vinden
+                  </h4>
+                  <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">
+                    Vul onderstaand formulier in of neem direct contact op via WhatsApp of telefoon. Wij gaan meteen voor u op zoek in ons uitgebreid dealernetwerk.
+                  </p>
+                </div>
+
+                {conciergeSubmitted ? (
+                  <div className="my-6 p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                    <div className="font-bold text-zinc-900 text-sm">{t.conciergeSuccess}</div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleConciergeFormSubmit} className="mt-6 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">{tHero.brand}</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Porsche, BMW..."
+                          value={conciergeBrand}
+                          onChange={(e) => setConciergeBrand(e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">Model</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Taycan, M4..."
+                          value={conciergeModel}
+                          onChange={(e) => setConciergeModel(e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">{t.maxBudget} (€)</label>
+                        <input
+                          type="text"
+                          placeholder="€ 65.000"
+                          value={conciergeBudget}
+                          onChange={(e) => setConciergeBudget(e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">{tValuation.yourName}</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Alex..."
+                          value={conciergeName}
+                          onChange={(e) => setConciergeName(e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">{tValuation.phone}</label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="+32 4..."
+                          value={conciergePhone}
+                          onChange={(e) => setConciergePhone(e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-zinc-600 mb-1">{tValuation.email}</label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="alex@..."
+                          value={conciergeEmail}
+                          onChange={(e) => setConciergeEmail(e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-[#FF6B00]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                      <span className="text-[11px] text-zinc-400 flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        {tHero.carPass100}
+                      </span>
+
+                      <button
+                        type="submit"
+                        className="px-6 py-3 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
+                      >
+                        <Send className="w-3.5 h-3.5 text-[#FF6B00]" />
+                        <span>{t.conciergeSubmit}</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <div className="mt-8 pt-4 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
+                  <div className="flex items-center gap-2">
+                    <span>Direct advies van onze zaakvoerder:</span>
                     <a
                       href={`https://wa.me/${dealershipSettings.whatsapp.replace(/[^0-9]/g, '')}?text=Hallo%20Auto%20Sale%2C%20ik%20heb%20een%20specifieke%20zoekopdracht.`}
                       target="_blank"
@@ -517,64 +516,13 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
                       <Phone className="w-3.5 h-3.5 text-[#FF6B00]" /> {dealershipSettings.phone}
                     </a>
                   </div>
-                </div>
-              </div>
 
-              {/* Right Col: Binnenkort Verwacht in de Showroom (5 cols) */}
-              <div className="lg:col-span-5 bg-gradient-to-br from-zinc-900 to-black text-white rounded-3xl p-6 sm:p-8 border border-zinc-800 shadow-sm flex flex-col justify-between">
-                <div>
-                  <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#FF6B00] mb-2">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>In Voorbereiding</span>
-                  </div>
-                  <h4 className="text-lg font-black font-['Outfit',sans-serif]">
-                    Binnenkort Verwacht in Showroom
-                  </h4>
-                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                    Onderstaande voertuigen zijn recent ingekocht en worden momenteel technisch gekeurd volgens de 113 Traxio-inspectiepunten:
-                  </p>
-
-                  <div className="mt-4 space-y-2.5">
-                    <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-xs text-white">Porsche Taycan 4S</div>
-                        <div className="text-[10px] text-zinc-400">2023 • 18.500 km • Performance Battery</div>
-                      </div>
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30">
-                        In Keuring
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-xs text-white">Mercedes-Benz G 63 AMG</div>
-                        <div className="text-[10px] text-zinc-400">2022 • 32.000 km • V8 Biturbo Night Pack</div>
-                      </div>
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                        Poetsfase
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-xs text-white">BMW M4 Competition xDrive</div>
-                        <div className="text-[10px] text-zinc-400">2023 • 14.200 km • Isle of Man Green</div>
-                      </div>
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                        Car-Pass Ok
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-zinc-800/80 flex items-center justify-between text-xs">
-                  <span className="text-zinc-400 text-[11px]">Dealer Beheerpaneel:</span>
                   <button
                     onClick={onOpenDealerLogin}
-                    className="inline-flex items-center gap-1.5 text-xs text-[#FF6B00] hover:text-orange-400 font-bold transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-[#FF6B00] font-bold transition-colors cursor-pointer"
                   >
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>Inloggen als Dealer</span>
+                    <Lock className="w-3 h-3" />
+                    <span>Dealer Inloggen</span>
                   </button>
                 </div>
               </div>

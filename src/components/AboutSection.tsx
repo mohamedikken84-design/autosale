@@ -12,19 +12,25 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { DEALERSHIP_INFO } from '../data/dealership';
+import { Language } from '../types';
+import { TRANSLATIONS } from '../i18n/translations';
 
 interface AboutSectionProps {
   onExploreStock: () => void;
   onOpenValuation: () => void;
   showroomImageUrl?: string;
+  language?: Language;
 }
 
 export const AboutSection: React.FC<AboutSectionProps> = ({
   onExploreStock,
   onOpenValuation,
-  showroomImageUrl
+  showroomImageUrl,
+  language = 'nl'
 }) => {
   const currentShowroomPhoto = showroomImageUrl || '/hero-showroom.jpg';
+  const t = TRANSLATIONS[language]?.about || TRANSLATIONS.nl.about;
+  const tNav = TRANSLATIONS[language]?.nav || TRANSLATIONS.nl.nav;
 
   return (
     <div id="about-container">
@@ -36,33 +42,33 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
               <div className="lg:col-span-7 space-y-3 sm:space-y-4">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF6B00] text-white text-[11px] sm:text-xs font-bold uppercase tracking-widest shadow-sm">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Traxio Label & Car-Pass</span>
+                  <span>{t.badge}</span>
                 </div>
 
                 <h3 className="text-2xl sm:text-4xl font-black font-['Outfit',sans-serif] tracking-tight leading-tight">
-                  Zorgeloos Rijden met Maximale Zekerheid
+                  {t.title}
                 </h3>
 
                 <p className="text-gray-300 text-xs sm:text-base leading-relaxed">
-                  Als erkend lid van de Belgische automobielfederatie <strong className="text-white font-bold">Traxio</strong> hanteren wij de strengste kwaliteitsnormen. Elk voertuig ondergaat een diepgaande inspectie op 113 controlepunten en wordt afgeleverd met een officiële Car-Pass kilometergarantie en blanco keuring voor verkoop.
+                  {t.description}
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pt-1 sm:pt-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-                    <span>12 tot 24 Maanden Garantie</span>
+                    <span>{t.bullet1}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-                    <span>100% Car-Pass Kilometergarantie</span>
+                    <span>{t.bullet2}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-                    <span>Blanco Keuring & Aanvraag Plaat</span>
+                    <span>{t.bullet3}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-                    <span>Europese Pechhulp Beschikbaar</span>
+                    <span>{t.bullet4}</span>
                   </div>
                 </div>
               </div>
@@ -77,13 +83,13 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                   </div>
                 </div>
                 <div className="text-lg sm:text-xl font-black font-['Outfit',sans-serif] text-white">
-                  Erkend Kwaliteitslid
+                  {t.badge}
                 </div>
                 <p className="text-xs text-gray-400 max-w-xs leading-relaxed">
-                  Aangesloten bij de federatie van de Belgische autosector. Uw waarborg voor eerlijke voorwaarden, transparante contracten en deskundig advies.
+                  {t.description}
                 </p>
                 <div className="text-[10px] font-bold text-gray-400 pt-1 uppercase tracking-wider">
-                  KBO Lidnr: {DEALERSHIP_INFO.vatNumber}
+                  KBO: {DEALERSHIP_INFO.vatNumber}
                 </div>
               </div>
             </div>
@@ -128,7 +134,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                   25+
                 </div>
                 <div className="text-[10px] sm:text-xs font-black leading-tight uppercase tracking-wider">
-                  Jaren Passie <br />Voor Auto's
+                  {t.historyTitle}
                 </div>
               </div>
             </div>
@@ -137,48 +143,49 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
             <div className="lg:col-span-7 space-y-4 sm:space-y-5">
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-zinc-200 text-[#1A1A1A] text-[11px] sm:text-xs font-bold uppercase tracking-widest shadow-xs">
                 <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
-                <span>Over Auto Sale NV</span>
+                <span>{tNav.about}</span>
               </div>
 
               <h2 className="text-2xl sm:text-5xl font-black text-[#1A1A1A] font-['Outfit',sans-serif] tracking-tighter leading-tight">
-                Vaste Waarde in de Antwerpse Autosector Sinds 1999
+                {t.historyTitle}
               </h2>
 
               <p className="text-gray-600 text-xs sm:text-base leading-relaxed">
-                Opgericht in 1999 aan de Sint-Bernardsesteenweg in Hoboken (Antwerpen), is Auto Sale NV uitgegroeid tot één van de meest gereputeerde onafhankelijke dealers van jonge, exclusieve tweedehandswagens in Vlaanderen en ver daarbuiten.
+                {t.historyText}
               </p>
 
-              <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-                Onze filosofie is gebouwd op drie onwrikbare pijlers: <strong className="text-[#1A1A1A] font-bold">Uitmuntende staat, Extreme selectiviteit en Scherpe prijzen</strong>. Wij selecteren uitsluitend voertuigen die voldoen aan de hoogste eisen van veeleisende bestuurders en bedrijven.
-              </p>
-
-              {/* Founder quote box - Clean Bento Card (no side tabs) */}
+              {/* Founder quote box */}
               <div className="p-6 rounded-3xl bg-[#F8F8F8] border border-gray-200">
                 <div className="flex gap-4 items-start">
                   <Quote className="w-8 h-8 text-[#FF6B00] shrink-0 opacity-80" />
                   <div>
                     <blockquote className="italic text-[#1A1A1A] text-sm font-semibold leading-relaxed">
-                      "Auto Sale laat je niet alleen met een geweldige auto rijden, maar ook met een grote glimlach. Dat is al 25 jaar onze persoonlijke belofte aan elke klant die bij ons binnenstapt."
+                      {t.quote}
                     </blockquote>
                     <div className="mt-3 text-xs font-bold text-[#1A1A1A]">
-                      Michel Primack <span className="text-gray-500 font-normal">— Zaakvoerder Auto Sale NV</span>
+                      Michel Primack <span className="text-gray-500 font-normal">— Auto Sale NV</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Services grid - Bento cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                {DEALERSHIP_INFO.guarantees.map((g, i) => (
-                  <div key={i} className="p-5 rounded-2xl border border-gray-200 bg-[#F8F8F8]">
-                    <h4 className="font-bold text-xs text-[#1A1A1A] uppercase tracking-wider mb-1">
-                      {g.title}
-                    </h4>
-                    <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                      {g.description}
-                    </p>
-                  </div>
-                ))}
+              {/* Action buttons */}
+              <div className="flex flex-wrap gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={onExploreStock}
+                  className="inline-flex items-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-3.5 px-6 rounded-2xl transition-all cursor-pointer shadow-md"
+                >
+                  <span>{t.exploreBtn}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenValuation}
+                  className="inline-flex items-center gap-2 bg-white hover:bg-gray-100 text-[#1A1A1A] font-bold uppercase text-xs tracking-wider py-3.5 px-6 rounded-2xl border border-gray-200 transition-all cursor-pointer shadow-xs"
+                >
+                  <span>{t.valuationBtn}</span>
+                </button>
               </div>
             </div>
           </div>

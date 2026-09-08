@@ -10,8 +10,20 @@ import {
   Send
 } from 'lucide-react';
 import { DEALERSHIP_INFO } from '../data/dealership';
+import { Language, Currency } from '../types';
+import { TRANSLATIONS } from '../i18n/translations';
+import { formatCurrencyPrice, getCurrencySymbol } from '../utils/currency';
 
-export const FinancingCalculator: React.FC = () => {
+interface FinancingCalculatorProps {
+  language?: Language;
+  currency?: Currency;
+}
+
+export const FinancingCalculator: React.FC<FinancingCalculatorProps> = ({ 
+  language = 'nl',
+  currency = 'EUR' as Currency
+}) => {
+  const activeCurrency: Currency = currency;
   const [carPrice, setCarPrice] = useState<number>(65000);
   const [downPaymentPercent, setDownPaymentPercent] = useState<number>(15);
   const [months, setMonths] = useState<number>(60);
@@ -19,6 +31,14 @@ export const FinancingCalculator: React.FC = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [applicantName, setApplicantName] = useState('');
   const [applicantPhone, setApplicantPhone] = useState('');
+
+  const t = TRANSLATIONS[language]?.financing || TRANSLATIONS.nl.financing;
+  const currSymbol = getCurrencySymbol(activeCurrency).trim();
+
+  // Helper to clean up currency symbol in labels like "(€)"
+  const cleanLabel = (text: string) => {
+    return text.replace(/\(€\)/g, `(${currSymbol})`);
+  };
 
   // Fixed indicative annual percentage rate (JKP) in Belgium for young pre-owned cars
   const annualInterestRate = 0.0599; 
@@ -53,13 +73,13 @@ export const FinancingCalculator: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FF6B00] text-white text-xs font-bold uppercase tracking-widest mb-3 shadow-xs">
             <Calculator className="w-3.5 h-3.5" />
-            <span>Financiering & Leasing</span>
+            <span>{t.badge}</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] font-['Outfit',sans-serif] tracking-tighter">
-            Bereken Uw Maandelijkse Afbetaling
+            {t.title}
           </h2>
           <p className="mt-3 text-sm sm:text-base text-gray-500 max-w-2xl mx-auto">
-            Of u nu particulier koopt of zakelijk least: wij bieden flexibele formules op maat met of zonder voorschot, en met mogelijkheid tot een restwaarde (ballon).
+            {t.subtitle}
           </p>
         </div>
 
@@ -70,10 +90,10 @@ export const FinancingCalculator: React.FC = () => {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                  Aankoopprijs Voertuig
+                  {cleanLabel(t.carPrice)}
                 </label>
                 <span className="text-2xl font-black text-[#1A1A1A] font-['Outfit',sans-serif] tracking-tight">
-                  €{carPrice.toLocaleString('nl-BE')}
+                  {formatCurrencyPrice(carPrice, activeCurrency)}
                 </span>
               </div>
               <input
@@ -86,9 +106,9 @@ export const FinancingCalculator: React.FC = () => {
                 className="w-full accent-[#FF6B00] cursor-pointer h-2 bg-gray-200 rounded-lg"
               />
               <div className="flex justify-between text-[11px] text-gray-400 mt-1 font-semibold">
-                <span>€15.000</span>
-                <span>€100.000</span>
-                <span>€180.000</span>
+                <span>{formatCurrencyPrice(15000, activeCurrency)}</span>
+                <span>{formatCurrencyPrice(100000, activeCurrency)}</span>
+                <span>{formatCurrencyPrice(180000, activeCurrency)}</span>
               </div>
             </div>
 
@@ -96,10 +116,10 @@ export const FinancingCalculator: React.FC = () => {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                  Voorschot ({downPaymentPercent}%)
+                  {cleanLabel(t.downPayment)} ({downPaymentPercent}%)
                 </label>
                 <span className="text-base font-bold text-[#1A1A1A]">
-                  €{downPaymentAmount.toLocaleString('nl-BE')}
+                  {formatCurrencyPrice(downPaymentAmount, activeCurrency)}
                 </span>
               </div>
               <input
@@ -112,7 +132,7 @@ export const FinancingCalculator: React.FC = () => {
                 className="w-full accent-[#FF6B00] cursor-pointer h-2 bg-gray-200 rounded-lg"
               />
               <div className="flex justify-between text-[11px] text-gray-400 mt-1 font-semibold">
-                <span>0% (Geen voorschot)</span>
+                <span>0%</span>
                 <span>20%</span>
                 <span>40%</span>
               </div>
@@ -121,7 +141,7 @@ export const FinancingCalculator: React.FC = () => {
             {/* 3. Duration Buttons */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
-                Looptijd van het Krediet
+                {t.duration}
               </label>
               <div className="grid grid-cols-4 gap-2 sm:gap-3">
                 {[24, 36, 48, 60].map((m) => (
@@ -135,8 +155,8 @@ export const FinancingCalculator: React.FC = () => {
                         : 'border-gray-200 bg-white text-[#1A1A1A] hover:bg-gray-100'
                     }`}
                   >
-                    <div>{m} mnd</div>
-                    <div className={`text-[10px] font-semibold mt-0.5 ${months === m ? 'text-white/80' : 'text-gray-400'}`}>{m / 12} jaar</div>
+                    <div>{m} {t.months}</div>
+                    <div className={`text-[10px] font-semibold mt-0.5 ${months === m ? 'text-white/80' : 'text-gray-400'}`}>{m / 12} {t.years}</div>
                   </button>
                 ))}
               </div>
@@ -146,10 +166,10 @@ export const FinancingCalculator: React.FC = () => {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                  Restwaarde / Slottermijn ({balloonPercent}%)
+                  {cleanLabel(t.balloonLabel)} ({balloonPercent}%)
                 </label>
                 <span className="text-base font-bold text-[#1A1A1A]">
-                  €{balloonAmount.toLocaleString('nl-BE')}
+                  {formatCurrencyPrice(balloonAmount, activeCurrency)}
                 </span>
               </div>
               <input
@@ -161,9 +181,6 @@ export const FinancingCalculator: React.FC = () => {
                 onChange={(e) => setBalloonPercent(Number(e.target.value))}
                 className="w-full accent-[#FF6B00] cursor-pointer h-2 bg-gray-200 rounded-lg"
               />
-              <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Een hogere restwaarde verlaagt uw maandbedrag aanzienlijk. Aan het einde kunt u de wagen inruilen of overnemen.
-              </p>
             </div>
           </div>
 
@@ -171,33 +188,33 @@ export const FinancingCalculator: React.FC = () => {
           <div className="lg:col-span-5 bg-[#1A1A1A] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-zinc-800 space-y-6">
             <div>
               <span className="text-xs font-black tracking-widest uppercase text-[#FF6B00]">
-                Geschat Maandbedrag
+                {t.monthlyEstTitle}
               </span>
               <div className="text-4xl sm:text-5xl font-black font-['Outfit',sans-serif] text-white mt-1">
-                €{monthlyPayment} <span className="text-sm font-normal text-gray-400">/ maand</span>
+                {formatCurrencyPrice(monthlyPayment, activeCurrency)} <span className="text-sm font-normal text-gray-400">/ {t.months}</span>
               </div>
               <p className="text-xs text-gray-400 mt-2 font-medium">
-                Gebaseerd op een indicatieve JKP van 5,99% met {months} maandelijkse termijnen.
+                {t.interestNote} • {months} {t.months}
               </p>
             </div>
 
             {/* Calculation summary */}
             <div className="p-4 rounded-2xl bg-black/50 border border-zinc-800 space-y-2.5 text-xs">
               <div className="flex justify-between text-gray-400">
-                <span>Voertuigprijs:</span>
-                <span className="font-bold text-white">€{carPrice.toLocaleString('nl-BE')}</span>
+                <span>{cleanLabel(t.carPrice)}:</span>
+                <span className="font-bold text-white">{formatCurrencyPrice(carPrice, activeCurrency)}</span>
               </div>
               <div className="flex justify-between text-gray-400">
-                <span>Voorschot:</span>
-                <span className="font-bold text-white">€{downPaymentAmount.toLocaleString('nl-BE')}</span>
+                <span>{cleanLabel(t.downPayment)}:</span>
+                <span className="font-bold text-white">{formatCurrencyPrice(downPaymentAmount, activeCurrency)}</span>
               </div>
               <div className="flex justify-between text-gray-400">
-                <span>Te financieren kapitaal:</span>
-                <span className="font-bold text-white">€{principal.toLocaleString('nl-BE')}</span>
+                <span>{cleanLabel(t.totalCost)}:</span>
+                <span className="font-bold text-white">{formatCurrencyPrice(principal, activeCurrency)}</span>
               </div>
               <div className="flex justify-between text-gray-400">
-                <span>Laatste verhoogde aflossing:</span>
-                <span className="font-bold text-white">€{balloonAmount.toLocaleString('nl-BE')}</span>
+                <span>{cleanLabel(t.balloonLabel)}:</span>
+                <span className="font-bold text-white">{formatCurrencyPrice(balloonAmount, activeCurrency)}</span>
               </div>
             </div>
 
@@ -205,14 +222,14 @@ export const FinancingCalculator: React.FC = () => {
             {!formSubmitted ? (
               <form onSubmit={handleApply} className="space-y-3 pt-2">
                 <div className="text-xs font-bold uppercase tracking-wider text-gray-300">
-                  Vraag Vrijblijvende Goedkeuring Aan
+                  {t.applyTitle}
                 </div>
                 <input
                   type="text"
                   required
                   value={applicantName}
                   onChange={(e) => setApplicantName(e.target.value)}
-                  placeholder="Uw naam"
+                  placeholder={t.name}
                   className="w-full bg-black/60 border border-zinc-700 rounded-2xl px-4 py-3 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                 />
                 <input
@@ -220,7 +237,7 @@ export const FinancingCalculator: React.FC = () => {
                   required
                   value={applicantPhone}
                   onChange={(e) => setApplicantPhone(e.target.value)}
-                  placeholder="Uw telefoonnummer (+32...)"
+                  placeholder={t.phone}
                   className="w-full bg-black/60 border border-zinc-700 rounded-2xl px-4 py-3 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                 />
 
@@ -229,22 +246,22 @@ export const FinancingCalculator: React.FC = () => {
                   className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-4 px-6 rounded-2xl shadow-md transition-all cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
-                  <span>Vrijblijvend Voorstel Ontvangen</span>
+                  <span>{t.sendApplication}</span>
                 </button>
               </form>
             ) : (
               <div className="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-center space-y-2">
                 <CheckCircle2 className="w-7 h-7 text-emerald-400 mx-auto" />
-                <h4 className="text-sm font-bold text-white">Aanvraag Verzonden!</h4>
+                <h4 className="text-sm font-bold text-white">{t.appSubmitted}</h4>
                 <p className="text-xs text-zinc-300">
-                  Bedankt <strong>{applicantName}</strong>. Onze financieringsexpert neemt binnen enkele uren contact met u op.
+                  {applicantName}
                 </p>
               </div>
             )}
 
             {/* Legal notice requirement for Belgium */}
             <div className="pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400 leading-tight">
-              * Let op, geld lenen kost ook geld. Lening op afbetaling onder voorbehoud van aanvaarding van uw dossier door onze erkende financiële partners.
+              {t.disclaimer}
             </div>
           </div>
         </div>

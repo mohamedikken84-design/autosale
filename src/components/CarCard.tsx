@@ -29,7 +29,23 @@ export const CarCard: React.FC<CarCardProps> = ({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const t = TRANSLATIONS[language]?.inventory || TRANSLATIONS.nl.inventory;
+  const tCard = TRANSLATIONS[language]?.carCard || TRANSLATIONS.nl.carCard;
+  const tHero = TRANSLATIONS[language]?.hero || TRANSLATIONS.nl.hero;
   const isSold = car.status === 'sold';
+
+  const getFuelDisplay = (fuel: string) => {
+    if (fuel === 'Benzine') return tHero.petrol;
+    if (fuel === 'Diesel') return tHero.diesel;
+    if (fuel === 'Hybride' || fuel === 'Plug-in Hybride') return tHero.hybrid;
+    if (fuel === 'Elektrisch') return tHero.electric;
+    return fuel;
+  };
+
+  const getTransmissionDisplay = (trans: string) => {
+    if (trans === 'Automaat') return t.automatic;
+    if (trans === 'Handgeschakeld') return t.manual;
+    return trans;
+  };
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -72,7 +88,7 @@ export const CarCard: React.FC<CarCardProps> = ({
           {car.featured && !isSold && (
             <span className="inline-flex items-center gap-1 bg-[#FF6B00] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-xs">
               <Sparkles className="w-3 h-3" />
-              Featured
+              {tCard.featured}
             </span>
           )}
 
@@ -83,7 +99,7 @@ export const CarCard: React.FC<CarCardProps> = ({
               ? 'bg-sky-950/80 text-sky-300 border border-sky-500/30'
               : 'bg-[#1A1A1A]/80 text-zinc-200 border border-zinc-700/50'
           }`}>
-            {car.fuel}
+            {getFuelDisplay(car.fuel)}
           </span>
 
           {car.vatDeductible && !isSold && (
@@ -105,7 +121,7 @@ export const CarCard: React.FC<CarCardProps> = ({
               ? 'bg-[#FF6B00] text-white shadow-md' 
               : 'bg-black/50 text-white hover:bg-[#FF6B00]'
           }`}
-          title={isFavorite ? 'Verwijder uit favorieten' : 'Opslaan in favorieten'}
+          title={isFavorite ? tCard.removeFavorite : tCard.saveFavorite}
         >
           <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
         </button>
@@ -146,7 +162,7 @@ export const CarCard: React.FC<CarCardProps> = ({
         {/* Warranty pill on image corner */}
         <div className="absolute bottom-2.5 left-3 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-white/95 bg-black/70 backdrop-blur-sm px-2.5 py-1 rounded-full">
           <ShieldCheck className="w-3.5 h-3.5 text-[#FF6B00]" />
-          <span>{car.warrantyMonths} mnd Garantie</span>
+          <span>{car.warrantyMonths} {tCard.warranty}</span>
         </div>
       </div>
 
@@ -154,12 +170,9 @@ export const CarCard: React.FC<CarCardProps> = ({
       <div className="p-4 sm:p-6 flex flex-col flex-1">
         {/* Brand & Model Title */}
         <div className="mb-2 sm:mb-3">
-          <div className="flex items-baseline justify-between gap-2 mb-1">
+          <div className="mb-1">
             <span className="text-[10px] sm:text-[11px] uppercase tracking-widest font-black text-[#FF6B00]">
               {car.brand}
-            </span>
-            <span className="text-[10px] font-bold text-gray-400">
-              ID #{car.carPassId}
             </span>
           </div>
           <h3 className="text-base sm:text-xl font-black text-[#1A1A1A] font-['Outfit',sans-serif] tracking-tight line-clamp-1 group-hover:text-[#FF6B00] transition-colors">
@@ -184,11 +197,11 @@ export const CarCard: React.FC<CarCardProps> = ({
           </div>
           <div className="flex items-center gap-1.5 text-zinc-700">
             <Zap className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-            <span className="font-bold truncate">{car.powerHp} PK ({car.transmission})</span>
+            <span className="font-bold truncate">{car.powerHp} PK ({getTransmissionDisplay(car.transmission)})</span>
           </div>
           <div className="flex items-center gap-1.5 text-zinc-700">
             <Fuel className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-            <span className="font-bold truncate">{car.engineSize || car.fuel}</span>
+            <span className="font-bold truncate">{car.engineSize || getFuelDisplay(car.fuel)}</span>
           </div>
         </div>
 
@@ -213,7 +226,7 @@ export const CarCard: React.FC<CarCardProps> = ({
                   {t.soldBadge}
                 </span>
                 <div className="text-[10px] sm:text-[11px] text-gray-400 font-medium mt-0.5 sm:mt-1">
-                  Niet meer beschikbaar
+                  {tCard.notAvailable}
                 </div>
               </div>
             ) : (
@@ -222,7 +235,7 @@ export const CarCard: React.FC<CarCardProps> = ({
                   {formatCurrencyPrice(car.price, currency)}
                 </div>
                 <div className="text-[10px] sm:text-[11px] text-gray-400 font-semibold">
-                  Vanaf <span className="font-black text-[#1A1A1A]">{formatCurrencyPrice(car.monthlyPrice, currency)}</span>/{t.perMonth}
+                  {tCard.from} <span className="font-black text-[#1A1A1A]">{formatCurrencyPrice(car.monthlyPrice, currency)}</span>/{t.perMonth}
                 </div>
               </div>
             )}

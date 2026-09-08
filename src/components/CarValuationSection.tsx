@@ -13,26 +13,32 @@ import {
   AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { ValuationFormState } from '../types';
+import { ValuationFormState, Language } from '../types';
 import { DEALERSHIP_INFO } from '../data/dealership';
+import { TRANSLATIONS } from '../i18n/translations';
 
 interface CarValuationSectionProps {
   onValuationSubmit?: (data: ValuationFormState, referenceNumber: string) => void;
+  language?: Language;
 }
 
 export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
-  onValuationSubmit
+  onValuationSubmit,
+  language = 'nl'
 }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [referenceNumber, setReferenceNumber] = useState('');
 
+  const t = TRANSLATIONS[language]?.valuation || TRANSLATIONS.nl.valuation;
+  const tHero = TRANSLATIONS[language]?.hero || TRANSLATIONS.nl.hero;
+
   const [formData, setFormData] = useState<ValuationFormState>({
     licensePlate: '',
     brand: '',
     model: '',
-    year: 2020,
-    mileage: 65000,
+    year: '',
+    mileage: '',
     fuel: 'Benzine',
     transmission: 'Automaat',
     condition: 'uitstekend',
@@ -75,8 +81,8 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
       licensePlate: '',
       brand: '',
       model: '',
-      year: 2020,
-      mileage: 65000,
+      year: '',
+      mileage: '',
       fuel: 'Benzine',
       transmission: 'Automaat',
       condition: 'uitstekend',
@@ -96,25 +102,25 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
           <div className="lg:col-span-5 space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FF6B00] text-white text-xs font-bold uppercase tracking-widest shadow-sm">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Inkoop & Overname</span>
+              <span>{t.badge}</span>
             </div>
 
             <h2 className="text-3xl sm:text-5xl font-black font-['Outfit',sans-serif] tracking-tighter leading-tight">
-              Uw Auto Direct & Veilig Verkopen aan <span className="text-[#FF6B00]">Auto Sale</span>
+              {t.title}
             </h2>
 
             <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
-              Wilt u uw wagen inruilen of direct verkopen? Bij Auto Sale garanderen wij een snelle, transparante en correcte marktconforme waardebepaling. Geen gedoe met particuliere kopers, maar onmiddellijke afhandeling.
+              {t.subtitle}
             </p>
 
             {/* Criteria Box */}
             <div className="p-5 rounded-3xl bg-black/40 border border-zinc-800 text-xs text-gray-300">
               <div className="font-bold text-white mb-1.5 flex items-center gap-2 text-sm uppercase tracking-wider">
                 <AlertCircle className="w-4 h-4 text-[#FF6B00]" />
-                <span>Onze Inkoopvoorwaarden</span>
+                <span>{t.benefit1 || 'Inkoop & Overname'}</span>
               </div>
               <p className="leading-relaxed">
-                Voertuigen tot maximaal 7 jaar oud, met aantoonbare onderhoudshistorie en ongevalvrij. Zowel particuliere wagens als bedrijfswagens (BTW aftrekbaar).
+                {t.subtitle}
               </p>
             </div>
 
@@ -125,8 +131,8 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                   <Banknote className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-white">Directe Betaling via Bankoverschrijving</h4>
-                  <p className="text-xs text-gray-400">Het overeengekomen bedrag staat op uw rekening vóór overdracht.</p>
+                  <h4 className="text-sm font-bold text-white">{t.benefit1}</h4>
+                  <p className="text-xs text-gray-400">{t.benefit2}</p>
                 </div>
               </div>
 
@@ -135,8 +141,8 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                   <FileCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-white">Officiële Vrijwaring & RDW/DIV Afhandeling</h4>
-                  <p className="text-xs text-gray-400">Wij regelen alle documenten en schrapping van de nummerplaat.</p>
+                  <h4 className="text-sm font-bold text-white">{t.benefit2}</h4>
+                  <p className="text-xs text-gray-400">{t.benefit3}</p>
                 </div>
               </div>
 
@@ -145,8 +151,8 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-white">Binnen 24 Uur een Vrijblijvend Bod</h4>
-                  <p className="text-xs text-gray-400">Onze experten analyseren uw aanvraag en contacteren u spoedig.</p>
+                  <h4 className="text-sm font-bold text-white">{t.benefit3}</h4>
+                  <p className="text-xs text-gray-400">{t.subtitle}</p>
                 </div>
               </div>
             </div>
@@ -165,7 +171,7 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                       }`}>
                         1
                       </span>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] hidden sm:inline">Voertuig</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] hidden sm:inline">{t.step1}</span>
                     </div>
 
                     <div className="w-8 h-0.5 bg-gray-200" />
@@ -176,7 +182,7 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                       }`}>
                         2
                       </span>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] hidden sm:inline">Staat & Historiek</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] hidden sm:inline">{t.step2}</span>
                     </div>
 
                     <div className="w-8 h-0.5 bg-gray-200" />
@@ -187,7 +193,7 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                       }`}>
                         3
                       </span>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] hidden sm:inline">Contact</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] hidden sm:inline">{t.step3}</span>
                     </div>
                   </div>
 
@@ -195,30 +201,30 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                   {step === 1 && (
                     <form onSubmit={handleNext} className="space-y-4">
                       <h3 className="text-2xl font-black font-['Outfit',sans-serif] text-[#1A1A1A] tracking-tight">
-                        Stap 1: Gegevens van uw voertuig
+                        {t.step1Title}
                       </h3>
                       <p className="text-xs text-gray-500 mb-4">
-                        Vul onderstaande gegevens in zodat onze taxateur de actuele marktwaarde kan bepalen.
+                        {t.step1Subtitle}
                       </p>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            Nummerplaat / Kenteken (optioneel)
+                            {t.licensePlate}
                           </label>
                           <input
                             type="text"
                             name="licensePlate"
                             value={formData.licensePlate}
                             onChange={handleChange}
-                            placeholder="bijv. 1-ABC-123"
+                            placeholder="1-ABC-123"
                             className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold uppercase focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            Merk *
+                            {tHero.brand} *
                           </label>
                           <input
                             type="text"
@@ -226,14 +232,14 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             required
                             value={formData.brand}
                             onChange={handleChange}
-                            placeholder="bijv. Land Rover, Mercedes, BMW"
+                            placeholder="Land Rover, Mercedes, BMW..."
                             className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            Model & Uitvoering *
+                            {t.model} *
                           </label>
                           <input
                             type="text"
@@ -241,46 +247,47 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             required
                             value={formData.model}
                             onChange={handleChange}
-                            placeholder="bijv. Range Rover Sport P440e"
+                            placeholder="Range Rover Sport P440e..."
                             className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            Bouwjaar *
+                            {t.year} *
                           </label>
                           <input
                             type="number"
                             name="year"
-                            min="2016"
-                            max="2026"
+                            min="1990"
+                            max="2027"
                             required
                             value={formData.year}
                             onChange={handleChange}
+                            placeholder="bv. 2021"
                             className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            Kilometerstand *
+                            {t.mileage} *
                           </label>
                           <input
                             type="number"
                             name="mileage"
-                            min="1000"
+                            min="0"
                             required
                             value={formData.mileage}
                             onChange={handleChange}
-                            placeholder="bijv. 45000"
+                            placeholder="bv. 45000"
                             className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            Brandstof *
+                            {tHero.fuel} *
                           </label>
                           <select
                             name="fuel"
@@ -288,10 +295,10 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             onChange={handleChange}
                             className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           >
-                            <option value="Benzine">Benzine</option>
-                            <option value="Diesel">Diesel</option>
-                            <option value="Plug-in Hybride">Plug-in Hybride</option>
-                            <option value="Elektrisch">100% Elektrisch</option>
+                            <option value="Benzine">{tHero.petrol}</option>
+                            <option value="Diesel">{tHero.diesel}</option>
+                            <option value="Plug-in Hybride">{tHero.hybrid}</option>
+                            <option value="Elektrisch">{tHero.electric}</option>
                           </select>
                         </div>
                       </div>
@@ -301,7 +308,7 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                           type="submit"
                           className="inline-flex items-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-3.5 px-6 rounded-2xl transition-all cursor-pointer shadow-md"
                         >
-                          <span>Volgende Stap</span>
+                          <span>{t.nextStep}</span>
                           <ArrowRight className="w-4 h-4" />
                         </button>
                       </div>
@@ -312,22 +319,22 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                   {step === 2 && (
                     <form onSubmit={handleNext} className="space-y-4">
                       <h3 className="text-xl font-bold font-['Outfit',sans-serif] text-zinc-950">
-                        Stap 2: Algemene Staat & Verwachting
+                        {t.step2Title}
                       </h3>
                       <p className="text-xs text-zinc-500 mb-4">
-                        Geef een eerlijke indicatie van de conditie voor een zo nauwkeurig mogelijk bod.
+                        {t.step2Subtitle}
                       </p>
 
                       <div className="space-y-4">
                         <div>
                           <label className="block text-xs font-bold text-zinc-700 mb-1.5">
-                            Hoe omschrijft u de staat van het voertuig? *
+                            {t.condition} *
                           </label>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                             {[
-                              { id: 'uitstekend', label: 'Uitstekend', sub: 'Zo goed als nieuw, geen schade' },
-                              { id: 'goed', label: 'Goed', sub: 'Lichte normale gebruikssporen' },
-                              { id: 'gebruikt', label: 'Matig / Gebruikt', sub: 'Krasjes of onderhoud vereist' }
+                              { id: 'uitstekend', label: t.conditionExcellent, sub: '' },
+                              { id: 'goed', label: t.conditionGood, sub: '' },
+                              { id: 'gebruikt', label: t.conditionFair, sub: '' }
                             ].map((c) => (
                               <button
                                 key={c.id}
@@ -340,7 +347,6 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                                 }`}
                               >
                                 <div className="font-bold text-xs uppercase tracking-wider text-[#1A1A1A]">{c.label}</div>
-                                <div className="text-[11px] text-gray-500 mt-1">{c.sub}</div>
                               </button>
                             ))}
                           </div>
@@ -348,28 +354,28 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
 
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            Gewenste verkoopprijs / Richtprijs (€) (optioneel)
+                            {t.expectedPrice}
                           </label>
                           <input
                             type="text"
                             name="expectedPrice"
                             value={formData.expectedPrice}
                             onChange={handleChange}
-                            placeholder="bijv. €45.000"
+                            placeholder="€ 45.000"
                             className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            Bijzondere opties of opmerkingen
+                            {t.notes}
                           </label>
                           <textarea
                             name="notes"
                             rows={3}
                             value={formData.notes}
                             onChange={handleChange}
-                            placeholder="bijv. Panoramadak, set winterwielen inbegrepen, pas groot onderhoud gehad bij merkdealer..."
+                            placeholder="..."
                             className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl p-4 text-xs font-semibold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
@@ -381,13 +387,13 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                           onClick={() => setStep(1)}
                           className="text-xs font-bold uppercase tracking-wider text-gray-600 hover:text-black py-3 px-4 cursor-pointer"
                         >
-                          ← Terug
+                          ← {t.previousStep}
                         </button>
                         <button
                           type="submit"
                           className="inline-flex items-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-3.5 px-6 rounded-2xl transition-all cursor-pointer shadow-md"
                         >
-                          <span>Volgende Stap</span>
+                          <span>{t.nextStep}</span>
                           <ArrowRight className="w-4 h-4" />
                         </button>
                       </div>
@@ -398,16 +404,16 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                   {step === 3 && (
                     <form onSubmit={handleNext} className="space-y-4">
                       <h3 className="text-2xl font-black font-['Outfit',sans-serif] text-[#1A1A1A] tracking-tight">
-                        Stap 3: Waar mogen we uw bod naartoe sturen?
+                        {t.step3Title}
                       </h3>
                       <p className="text-xs text-gray-500 mb-4">
-                        Wij sturen u binnen 24 uur een vrijblijvend overnamevoorstel.
+                        {t.step3Subtitle}
                       </p>
 
                       <div className="space-y-3">
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            Uw volledige naam *
+                            {t.yourName} *
                           </label>
                           <input
                             type="text"
@@ -415,14 +421,14 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             required
                             value={formData.name}
                             onChange={handleChange}
-                            placeholder="Voornaam en achternaam"
+                            placeholder="Alex..."
                             className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            Telefoonnummer *
+                            {t.phone} *
                           </label>
                           <input
                             type="tel"
@@ -437,7 +443,7 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
 
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            E-mailadres *
+                            {t.email} *
                           </label>
                           <input
                             type="email"
@@ -445,7 +451,7 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             required
                             value={formData.email}
                             onChange={handleChange}
-                            placeholder="uw.email@domein.be"
+                            placeholder="alex@..."
                             className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
@@ -454,7 +460,7 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                       <div className="p-4 bg-[#F8F8F8] rounded-2xl text-xs text-gray-600 flex items-start gap-2 border border-gray-100">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                         <span>
-                          Uw gegevens worden strikt vertrouwelijk behandeld en enkel gebruikt voor deze taxatie door Auto Sale Antwerpen.
+                          {t.privacyNote}
                         </span>
                       </div>
 
@@ -464,14 +470,14 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                           onClick={() => setStep(2)}
                           className="text-xs font-bold uppercase tracking-wider text-gray-600 hover:text-black py-3 px-4 cursor-pointer"
                         >
-                          ← Terug
+                          ← {t.previousStep}
                         </button>
                         <button
                           type="submit"
                           className="inline-flex items-center gap-2 bg-[#1A1A1A] hover:bg-[#FF6B00] text-white font-bold uppercase text-xs tracking-wider py-4 px-8 rounded-2xl shadow-md transition-all cursor-pointer"
                         >
                           <Send className="w-4 h-4 text-[#FF6B00]" />
-                          <span>Verstuur Taxatieaanvraag</span>
+                          <span>{t.submit}</span>
                         </button>
                       </div>
                     </form>
@@ -484,15 +490,13 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
                   <h3 className="text-2xl font-bold font-['Outfit',sans-serif] text-zinc-950">
-                    Taxatieaanvraag Succesvol Ontvangen!
+                    {t.successTitle}
                   </h3>
                   <div className="inline-block bg-zinc-100 px-4 py-1.5 rounded-lg text-xs font-mono font-bold text-zinc-700">
-                    Referentienummer: {referenceNumber}
+                    Ref: {referenceNumber}
                   </div>
                   <p className="text-sm text-zinc-600 max-w-md mx-auto leading-relaxed">
-                    Hartelijk dank, <strong>{formData.name}</strong>. Wij hebben de gegevens van uw{' '}
-                    <strong>{formData.brand} {formData.model} ({formData.year})</strong> in goede orde ontvangen.
-                    Onze taxateur neemt binnen 24 uur telefonisch of per e-mail contact met u op voor een vrijblijvend overnamebod.
+                    {t.successText}
                   </p>
 
                   <div className="pt-4 flex justify-center gap-3">
@@ -500,7 +504,7 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                       onClick={handleReset}
                       className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors cursor-pointer"
                     >
-                      Nog een auto aanmelden
+                      {t.badge}
                     </button>
                   </div>
                 </div>

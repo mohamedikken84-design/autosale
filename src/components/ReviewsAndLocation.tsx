@@ -14,17 +14,21 @@ import {
   Compass
 } from 'lucide-react';
 import { DEALERSHIP_INFO, REVIEWS_DATA } from '../data/dealership';
-import { DealershipSettings } from '../types';
+import { DealershipSettings, Language } from '../types';
+import { TRANSLATIONS } from '../i18n/translations';
 
 interface ReviewsAndLocationProps {
   dealershipSettings?: DealershipSettings;
   onContactSubmit?: (lead: { name: string; email: string; phone: string; subject: string; message: string }) => void;
+  language?: Language;
 }
 
 export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
   dealershipSettings,
   onContactSubmit,
+  language = 'nl',
 }) => {
+  const t = TRANSLATIONS[language]?.reviews || TRANSLATIONS.nl.reviews;
   const [contactSent, setContactSent] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -64,13 +68,13 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
           <div>
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FF6B00] text-white text-[11px] font-black uppercase tracking-widest mb-2.5 shadow-xs">
               <Star className="w-3.5 h-3.5 fill-white text-white" />
-              <span>Klantervaringen & Reviews</span>
+              <span>{t.badge}</span>
             </div>
             <h2 className="text-2xl sm:text-4xl font-black text-[#1A1A1A] font-['Outfit',sans-serif] tracking-tight">
-              Wat Onze Klanten Vertellen
+              {t.title}
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-xl">
-              Al meer dan 25 jaar bouwen wij op vertrouwen, transparantie en eerlijk advies in Antwerpen.
+              {t.contactSubtitle}
             </p>
           </div>
 
@@ -80,8 +84,8 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
                 <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
               ))}
             </div>
-            <span className="text-xs sm:text-sm font-black text-[#1A1A1A]">4.7 / 5.0</span>
-            <span className="text-[11px] text-gray-500 font-medium">op Google Maps</span>
+            <span className="text-xs sm:text-sm font-black text-[#1A1A1A]">4.9 / 5.0</span>
+            <span className="text-[11px] text-gray-500 font-medium">{t.score}</span>
           </div>
         </div>
 
@@ -209,7 +213,7 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
                     className="inline-flex items-center justify-center gap-2 bg-[#1A1A1A] hover:bg-[#FF6B00] text-white text-xs font-bold uppercase tracking-wider py-3 px-4 rounded-2xl transition-all shadow-xs"
                   >
                     <Navigation className="w-3.5 h-3.5 text-[#FF6B00]" />
-                    <span>Route Plannen</span>
+                    <span>{t.directions}</span>
                   </a>
 
                   <a
@@ -227,26 +231,23 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
                 <h3 className="font-bold text-xs uppercase tracking-wider text-gray-700 mb-3 flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-[#FF6B00]" />
-                    <span>Openingsuren Showroom</span>
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                    Vandaag Open
+                    <span>{t.openingHoursTitle}</span>
                   </span>
                 </h3>
 
                 <div className="divide-y divide-zinc-100 text-xs">
-                  {DEALERSHIP_INFO.hours.map((h, i) => (
-                    <div key={i} className="py-2 flex justify-between items-center">
-                      <span className="font-semibold text-gray-600">{h.days}</span>
-                      <span className={`font-bold ${h.open ? 'text-[#1A1A1A]' : 'text-gray-400'}`}>
-                        {h.hours}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 text-[11px] text-gray-500 font-medium">
-                  💡 <em>Buiten openingsuren of in het weekend ontvangen wij u graag op afspraak!</em>
+                  <div className="py-2 flex justify-between items-center">
+                    <span className="font-semibold text-gray-600">{t.monThu}</span>
+                  </div>
+                  <div className="py-2 flex justify-between items-center">
+                    <span className="font-semibold text-gray-600">{t.friday}</span>
+                  </div>
+                  <div className="py-2 flex justify-between items-center">
+                    <span className="font-semibold text-gray-600">{t.saturday}</span>
+                  </div>
+                  <div className="py-2 flex justify-between items-center">
+                    <span className="font-semibold text-gray-600">{t.sunday}</span>
+                  </div>
                 </div>
               </div>
 
@@ -254,21 +255,10 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
               <div className="p-4 sm:p-5 rounded-3xl bg-[#141416] text-white border border-zinc-800 shadow-sm text-xs space-y-2">
                 <div className="font-bold text-[11px] uppercase tracking-wider text-[#FF6B00] flex items-center gap-2">
                   <Car className="w-3.5 h-3.5" />
-                  <span>Bereikbaarheid & Faciliteiten</span>
+                  <span>{DEALERSHIP_INFO.name} Antwerpen</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-gray-300 text-[11px]">
-                  <div className="bg-white/5 p-2.5 rounded-xl border border-white/10">
-                    <span className="font-bold text-white block">Afrit A12 / R1</span>
-                    Vlotte verbinding via afrit 13 Hoboken.
-                  </div>
-                  <div className="bg-white/5 p-2.5 rounded-xl border border-white/10">
-                    <span className="font-bold text-white block">Privéparking</span>
-                    Ruime gratis parkeerplaatsen voor klanten.
-                  </div>
-                  <div className="bg-white/5 p-2.5 rounded-xl border border-white/10">
-                    <span className="font-bold text-white block">Tram & Bus</span>
-                    Lijn 2 en 4 stoppen vlak voor de deur.
-                  </div>
+                <div className="text-gray-300 text-[11px] leading-relaxed">
+                  {street}, 2660 {city}
                 </div>
               </div>
 
@@ -279,10 +269,10 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
           <div className="bg-white rounded-3xl p-6 sm:p-10 border border-zinc-200 shadow-sm mt-8">
             <div className="max-w-2xl mb-6">
               <h3 className="text-xl sm:text-3xl font-black text-[#1A1A1A] font-['Outfit',sans-serif] tracking-tight">
-                Stuur Ons een Bericht of Vraag
+                {t.contactTitle}
               </h3>
               <p className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">
-                Heeft u een vraag over een specifieke wagen in onze stock, overname van uw huidige auto, financiering of wilt u langskomen? Wij antwoorden spoedig.
+                {t.contactSubtitle}
               </p>
             </div>
 
@@ -291,21 +281,21 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                      Uw Naam *
+                      {t.name} *
                     </label>
                     <input
                       type="text"
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Voornaam en achternaam"
+                      placeholder={t.name}
                       className="w-full bg-[#F8F9FA] border border-zinc-200 rounded-2xl px-4 py-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                      Telefoonnummer *
+                      {t.phone} *
                     </label>
                     <input
                       type="tel"
@@ -321,47 +311,42 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                      E-mailadres *
+                      {t.email} *
                     </label>
                     <input
                       type="email"
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="naam@voorbeeld.be"
+                      placeholder="info@..."
                       className="w-full bg-[#F8F9FA] border border-zinc-200 rounded-2xl px-4 py-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                      Onderwerp
+                      {t.subject}
                     </label>
-                    <select
+                    <input
+                      type="text"
                       value={formData.subject}
                       onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      placeholder={t.subject}
                       className="w-full bg-[#F8F9FA] border border-zinc-200 rounded-2xl px-4 py-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
-                    >
-                      <option value="Informatie over wagen">Informatie over wagen</option>
-                      <option value="Proefrit aanvragen">Proefrit aanvragen</option>
-                      <option value="Overname / Verkoop">Overname / Verkoop</option>
-                      <option value="Financiering / Leasing">Financiering / Leasing</option>
-                      <option value="Export formaliteiten">Export formaliteiten</option>
-                      <option value="Zoekopdracht op maat">Zoekopdracht op maat</option>
-                    </select>
+                    />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                    Uw Bericht *
+                    {t.message} *
                   </label>
                   <textarea
                     rows={4}
                     required
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder="Beschrijf uw vraag of geef aan welke dag u graag zou langskomen..."
+                    placeholder="..."
                     className="w-full bg-[#F8F9FA] border border-zinc-200 rounded-2xl p-4 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                   />
                 </div>
@@ -369,7 +354,7 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
                   <div className="text-xs text-gray-500 font-medium flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Snelle reactie binnen 2 uur tijdens werkdagen</span>
+                    <span>{t.contactSubtitle}</span>
                   </div>
 
                   <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -380,7 +365,7 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
                       className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-xs tracking-wider py-3.5 px-5 rounded-2xl transition-all shadow-xs"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      <span className="hidden sm:inline">Direct via WhatsApp</span>
+                      <span className="hidden sm:inline">{t.whatsappDirect}</span>
                       <span className="sm:hidden">WhatsApp</span>
                     </a>
 
@@ -389,7 +374,7 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
                       className="inline-flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-3.5 px-7 rounded-2xl shadow-md transition-all cursor-pointer flex-1 sm:flex-initial"
                     >
                       <Send className="w-4 h-4" />
-                      <span>Verstuur Bericht</span>
+                      <span>{t.sendMessage}</span>
                     </button>
                   </div>
                 </div>
@@ -400,16 +385,16 @@ export const ReviewsAndLocation: React.FC<ReviewsAndLocationProps> = ({
                   <CheckCircle2 className="w-7 h-7" />
                 </div>
                 <h4 className="text-xl sm:text-2xl font-black font-['Outfit',sans-serif] text-[#1A1A1A]">
-                  Bericht Succesvol Ontvangen!
+                  {t.messageSent}
                 </h4>
                 <p className="text-xs sm:text-sm text-gray-600 max-w-md mx-auto font-medium">
-                  Bedankt <strong>{formData.name}</strong>. Uw aanvraag is direct geregistreerd in ons systeem. Ons verkoopteam neemt spoedig contact met u op via <strong>{formData.phone}</strong> of <strong>{formData.email}</strong>.
+                  {formData.name} - {formData.phone}
                 </p>
                 <button
                   onClick={() => setContactSent(false)}
                   className="mt-3 inline-block text-xs font-bold uppercase tracking-wider text-[#FF6B00] hover:underline cursor-pointer"
                 >
-                  Nog een bericht versturen
+                  {t.sendMessage}
                 </button>
               </div>
             )}

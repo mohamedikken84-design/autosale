@@ -5,10 +5,11 @@ import {
   Trash2, 
   ArrowRight, 
   CarFront, 
-  MessageCircle,
+  MessageCircle, 
   ExternalLink
 } from 'lucide-react';
-import { Car } from '../types';
+import { Car, Language } from '../types';
+import { TRANSLATIONS } from '../i18n/translations';
 
 interface FavoritesDrawerProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ interface FavoritesDrawerProps {
   onRemoveFavorite: (carId: string) => void;
   onSelectCar: (car: Car) => void;
   onRequestTestDrive: (car: Car) => void;
+  language?: Language;
 }
 
 export const FavoritesDrawer: React.FC<FavoritesDrawerProps> = ({
@@ -27,10 +29,12 @@ export const FavoritesDrawer: React.FC<FavoritesDrawerProps> = ({
   allCars,
   onRemoveFavorite,
   onSelectCar,
-  onRequestTestDrive
+  onRequestTestDrive,
+  language = 'nl'
 }) => {
   if (!isOpen) return null;
 
+  const t = TRANSLATIONS[language]?.favorites || TRANSLATIONS.nl.favorites;
   const savedCars = allCars.filter((c) => favorites.includes(c.id));
 
   return (
@@ -47,10 +51,10 @@ export const FavoritesDrawer: React.FC<FavoritesDrawerProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-base text-zinc-950 font-['Outfit',sans-serif]">
-                Opgeslagen Wagens ({savedCars.length})
+                {t.title} ({savedCars.length})
               </h3>
               <p className="text-[11px] text-zinc-500">
-                Vergelijk uw favoriete modellen
+                {t.subtitle}
               </p>
             </div>
           </div>
@@ -117,7 +121,7 @@ export const FavoritesDrawer: React.FC<FavoritesDrawerProps> = ({
                       onClose();
                     }}
                     className="p-1.5 bg-zinc-950 hover:bg-orange-500 text-white rounded-lg transition-colors text-xs"
-                    title="Plan proefrit"
+                    title={t.requestTestDrive}
                   >
                     <CarFront className="w-3.5 h-3.5" />
                   </button>
@@ -127,9 +131,9 @@ export const FavoritesDrawer: React.FC<FavoritesDrawerProps> = ({
           ) : (
             <div className="text-center py-16 text-zinc-400">
               <Heart className="w-12 h-12 mx-auto stroke-1 mb-2 text-zinc-300" />
-              <p className="text-sm font-semibold text-zinc-700">Geen opgeslagen wagens</p>
+              <p className="text-sm font-semibold text-zinc-700">{t.emptyTitle}</p>
               <p className="text-xs text-zinc-400 mt-1">
-                Klik op het hartje bij een wagen in onze stock om deze hier te bewaren.
+                {t.emptyText}
               </p>
             </div>
           )}
@@ -149,7 +153,7 @@ export const FavoritesDrawer: React.FC<FavoritesDrawerProps> = ({
               className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl text-xs font-bold transition-colors"
             >
               <MessageCircle className="w-4 h-4" />
-              <span>Vraag offerte via WhatsApp</span>
+              <span>WhatsApp</span>
             </a>
           </div>
         )}

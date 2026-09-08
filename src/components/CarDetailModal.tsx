@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   X, Heart, ShieldCheck, Calendar, Gauge, Fuel, Zap, 
   Phone, MessageCircle, CarFront, CheckCircle2, ChevronLeft, 
-  ChevronRight, Share2, Check, Play, Maximize2, Globe, FileCheck
+  ChevronRight, Share2, Check, Play, Maximize2, ZoomIn, Globe, FileCheck
 } from 'lucide-react';
 import { Car, Language, Currency, DealershipSettings } from '../types';
 import { TRANSLATIONS } from '../i18n/translations';
@@ -85,10 +85,6 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
               <span className="text-xs uppercase font-black tracking-widest text-[#FF6B00]">
                 {car.brand}
               </span>
-              <span className="text-gray-300">•</span>
-              <span className="text-xs font-bold text-gray-500">
-                Car-Pass Ref: {car.carPassId}
-              </span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -142,9 +138,10 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
                     className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
                   />
 
-                  {/* Fullscreen Overlay Hint */}
-                  <div className="absolute top-3 right-3 p-2.5 rounded-2xl bg-black/60 hover:bg-black/90 text-white transition-all backdrop-blur-sm">
-                    <Maximize2 className="w-4 h-4" />
+                  {/* Fullscreen & Zoom Overlay Hint */}
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-black/70 hover:bg-black/90 text-white transition-all backdrop-blur-sm shadow-md text-xs font-semibold">
+                    <ZoomIn className="w-4 h-4 text-[#FF6B00]" />
+                    <span className="hidden sm:inline">Zoom</span>
                   </div>
 
                   {/* Sold Ribbon Overlay */}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { CARS_DATA, SAMPLE_CARS_FOR_TESTING } from './data/cars';
+import { CARS_DATA } from './data/cars';
 import { DEALERSHIP_INFO } from './data/dealership';
 import { Car, FilterState, Language, Currency, DealershipSettings, UserRole, LeadInquiry, ValuationFormState, TestDriveBooking } from './types';
 import { Navbar } from './components/Navbar';
@@ -24,6 +24,7 @@ const AUTH_STORAGE_KEY = 'auto_sale_dealer_user';
 const CURRENCY_STORAGE_KEY = 'auto_sale_currency';
 const LEADS_STORAGE_KEY = 'auto_sale_leads_v2';
 const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
 export default function App() {
   // Dealership Settings (persisted)
@@ -198,10 +199,6 @@ export default function App() {
     setCars((prev) => prev.filter((c) => c.id !== carId));
   };
 
-  const handleLoadSampleCars = () => {
-    setCars(SAMPLE_CARS_FOR_TESTING);
-  };
-
   const handleImportBackup = (importedCars: Car[]) => {
     if (Array.isArray(importedCars)) {
       setCars(importedCars);
@@ -217,11 +214,19 @@ export default function App() {
     }
   };
 
-  // Leads & Inquiries persisted in localStorage
+  // Leads & Inquiries persisted in localStorage with auto-cleanup after 1 month (30 days)
   const [leads, setLeads] = useState<LeadInquiry[]>(() => {
     try {
       const saved = localStorage.getItem(LEADS_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed: LeadInquiry[] = JSON.parse(saved);
+      const now = Date.now();
+      // Auto-purge leads older than 1 month (30 days)
+      return parsed.filter((l) => {
+        const time = l.createdAt || (l.id.startsWith('lead-') ? parseInt(l.id.replace('lead-', ''), 10) : 0);
+        if (!time || isNaN(time)) return true;
+        return now - time <= ONE_MONTH_MS;
+      });
     } catch {
       return [];
     }
@@ -241,10 +246,33 @@ export default function App() {
     );
   };
 
+  const handleDeleteLead = (leadId: string) => {
+    setLeads((prev) => {
+      const updated = prev.filter((lead) => lead.id !== leadId);
+      try {
+        localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  };
+
+  const handleClearAllLeads = () => {
+    try {
+      localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify([]));
+    } catch {
+      // ignore
+    }
+    setLeads([]);
+  };
+
   const handleConciergeInquiry = (req: { brand: string; model: string; maxBudget: string; name: string; phone: string; email: string }) => {
+    const nowMs = Date.now();
     const newLead: LeadInquiry = {
-      id: 'lead-' + Date.now(),
+      id: 'lead-' + nowMs,
       date: new Date().toLocaleDateString('nl-BE') + ' ' + new Date().toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: nowMs,
       type: 'contact',
       name: req.name,
       email: req.email,
@@ -257,9 +285,11 @@ export default function App() {
   };
 
   const handleTestDriveSuccess = (booking: TestDriveBooking) => {
+    const nowMs = Date.now();
     const newLead: LeadInquiry = {
-      id: 'lead-' + Date.now(),
+      id: 'lead-' + nowMs,
       date: new Date().toLocaleDateString('nl-BE') + ' ' + new Date().toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: nowMs,
       type: 'test-drive',
       carId: booking.carId,
       carTitle: booking.carTitle || 'Proefritaanvraag',
@@ -273,9 +303,11 @@ export default function App() {
   };
 
   const handleValuationSuccess = (data: ValuationFormState, referenceNumber: string) => {
+    const nowMs = Date.now();
     const newLead: LeadInquiry = {
-      id: 'lead-' + Date.now(),
+      id: 'lead-' + nowMs,
       date: new Date().toLocaleDateString('nl-BE') + ' ' + new Date().toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: nowMs,
       type: 'valuation',
       name: data.name,
       email: data.email,
@@ -288,9 +320,11 @@ export default function App() {
   };
 
   const handleGeneralContactSubmit = (lead: { name: string; email: string; phone: string; subject: string; message: string }) => {
+    const nowMs = Date.now();
     const newLead: LeadInquiry = {
-      id: 'lead-' + Date.now(),
+      id: 'lead-' + nowMs,
       date: new Date().toLocaleDateString('nl-BE') + ' ' + new Date().toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: nowMs,
       type: 'contact',
       name: lead.name,
       email: lead.email,
@@ -497,27 +531,31 @@ export default function App() {
           currency={currency}
           dealershipSettings={dealershipSettings}
           onOpenDealerLogin={() => setIsDealerLoginOpen(true)}
-          onLoadSampleCars={handleLoadSampleCars}
           onConciergeSubmit={handleConciergeInquiry}
         />
 
         {/* "Wij Kopen Uw Auto" 3-Step Valuation Wizard */}
-        <CarValuationSection onValuationSubmit={handleValuationSuccess} />
+        <CarValuationSection 
+          onValuationSubmit={handleValuationSuccess} 
+          language={language}
+        />
 
         {/* Financing & Leasing Calculator */}
-        <FinancingCalculator />
+        <FinancingCalculator language={language} currency={currency} />
 
         {/* Traxio Kwaliteitsgarantie & 25-Year Heritage */}
         <AboutSection
           onExploreStock={() => handleNavigate('stock')}
           onOpenValuation={() => handleNavigate('overname')}
           showroomImageUrl={dealershipSettings.showroomImageUrl}
+          language={language}
         />
 
         {/* Google Reviews & Antwerp Location with Google Maps embed */}
         <ReviewsAndLocation
           dealershipSettings={dealershipSettings}
           onContactSubmit={handleGeneralContactSubmit}
+          language={language}
         />
       </main>
 
@@ -525,6 +563,7 @@ export default function App() {
       <Footer
         onNavigate={handleNavigate}
         dealershipSettings={dealershipSettings}
+        language={language}
       />
 
       {/* GDPR Cookie Consent Banner */}
@@ -552,6 +591,7 @@ export default function App() {
         selectedCar={selectedCarForTestDrive}
         allCars={publicCars}
         onBookingSuccess={handleTestDriveSuccess}
+        language={language}
       />
 
       <FavoritesDrawer
@@ -562,6 +602,7 @@ export default function App() {
         onRemoveFavorite={handleToggleFavorite}
         onSelectCar={(car) => setSelectedCarForDetail(car)}
         onRequestTestDrive={(car) => handleOpenTestDriveModal(car)}
+        language={language}
       />
 
       {/* Dealer Login Modal */}
@@ -577,7 +618,7 @@ export default function App() {
         onClose={() => setIsDealerDashboardOpen(false)}
         role={currentUser || 'admin'}
         user={currentUser}
-        username={currentUser === 'admin' ? 'Michel / Beheerder' : 'Verkoper'}
+        username="Michel / Beheerder"
         onLogout={handleLogout}
         cars={cars}
         onSaveCar={handleSaveCar}
@@ -585,13 +626,14 @@ export default function App() {
         onRestoreCar={handleRestoreCar}
         onPermanentDeleteCar={handlePermanentDeleteCar}
         onToggleSold={handleToggleSold}
-        onLoadSampleCars={handleLoadSampleCars}
         onImportBackup={handleImportBackup}
         dealershipSettings={dealershipSettings}
         onSaveDealershipSettings={handleSaveSettings}
         onSaveSettings={handleSaveSettings}
         leads={leads}
         onUpdateLeadStatus={handleUpdateLeadStatus}
+        onDeleteLead={handleDeleteLead}
+        onClearAllLeads={handleClearAllLeads}
       />
     </div>
   );

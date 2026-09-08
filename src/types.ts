@@ -2,7 +2,7 @@ export type FuelType = 'Benzine' | 'Diesel' | 'Plug-in Hybride' | 'Elektrisch' |
 export type TransmissionType = 'Automaat' | 'Manueel';
 export type BodyType = 'SUV / 4x4' | 'Berline' | 'Coupé' | 'Break' | 'Camper';
 export type Category = 'premium' | 'hybrid-electric' | 'export-handelaar' | 'all';
-export type Language = 'nl' | 'en' | 'fr' | 'de';
+export type Language = 'nl' | 'en' | 'fr' | 'de' | 'es' | 'it' | 'pl';
 export type Currency = 'EUR' | 'GBP' | 'CHF' | 'USD';
 export type UserRole = 'admin' | 'sales';
 
@@ -36,7 +36,7 @@ export interface Car {
   highlightSpecs: string[];
   options: string[];
   description: string;
-  status: 'available' | 'reserved' | 'sold';
+  status: 'available' | 'reserved' | 'sold' | 'in_preparation';
   deletedAt?: string; // ISO date string when soft-deleted, auto-purged after 3 days
   viewsCount?: number;
   branchId?: string;
@@ -84,9 +84,11 @@ export interface DealershipSettings {
 export interface LeadInquiry {
   id: string;
   date: string;
+  createdAt?: number; // timestamp in ms, auto-purged after 30 days
   type: 'test-drive' | 'valuation' | 'contact' | 'whatsapp';
   carId?: string;
   carTitle?: string;
+  subject?: string;
   name: string;
   email: string;
   phone: string;
@@ -111,8 +113,8 @@ export interface ValuationFormState {
   licensePlate: string;
   brand: string;
   model: string;
-  year: number;
-  mileage: number;
+  year: number | string;
+  mileage: number | string;
   fuel: string;
   transmission: string;
   condition: 'uitstekend' | 'goed' | 'gebruikt' | 'schade';

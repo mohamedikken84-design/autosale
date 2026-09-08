@@ -84,10 +84,10 @@ export const Hero: React.FC<HeroProps> = ({
           <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-gray-300 font-semibold">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Showroom Geopend</span>
+              <span>{t.showroomOpen}</span>
             </span>
             <span className="hidden sm:inline text-gray-500">•</span>
-            <span className="hidden sm:inline text-gray-400">Ma-Do 10:00-19:00 | Vr tot 16:30</span>
+            <span className="hidden sm:inline text-gray-400">{t.hoursText}</span>
           </div>
         </div>
 
@@ -99,7 +99,7 @@ export const Hero: React.FC<HeroProps> = ({
             </div>
             <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-[#FF6B00]">
               <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>Erkend Traxio Concessiehouder • 25+ Jaar</span>
+              <span>{t.traxioHeader}</span>
             </div>
           </div>
 
@@ -108,8 +108,7 @@ export const Hero: React.FC<HeroProps> = ({
           </h1>
 
           <p className="text-xs sm:text-base text-gray-300 max-w-2xl leading-relaxed">
-            Zorgvuldig geselecteerde, jonge directiewagens en premium tweedehandswagens. 
-            Elk voertuig gekeurd met 113 controlepunten, officiële Car-Pass en tot 24 maanden Traxio garantie.
+            {t.subtitle}
           </p>
 
           {/* Quick Action Buttons */}
@@ -118,7 +117,7 @@ export const Hero: React.FC<HeroProps> = ({
               onClick={onExploreStock}
               className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-2xl bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-lg shadow-orange-500/25 flex items-center gap-2 cursor-pointer"
             >
-              <span>Aanbod ({totalCarsCount})</span>
+              <span>{t.viewStock} ({totalCarsCount})</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -127,7 +126,7 @@ export const Hero: React.FC<HeroProps> = ({
               className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center gap-2 cursor-pointer"
             >
               <Car className="w-4 h-4 text-[#FF6B00]" />
-              <span>Inruilen / Taxatie</span>
+              <span>{t.sellCar}</span>
             </button>
 
             <a
@@ -149,14 +148,14 @@ export const Hero: React.FC<HeroProps> = ({
             {/* Brand selector */}
             <div className="lg:col-span-3">
               <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1 px-1">
-                Merk
+                {t.brand}
               </label>
               <select
                 value={selectedBrand}
                 onChange={(e) => setSelectedBrand(e.target.value)}
                 className="w-full bg-zinc-800/90 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-[#FF6B00]"
               >
-                <option value="">Alle Merken</option>
+                <option value="">{t.allBrands}</option>
                 {availableBrands.map((brand) => (
                   <option key={brand} value={brand} className="bg-zinc-900 text-white">
                     {brand}
@@ -168,37 +167,37 @@ export const Hero: React.FC<HeroProps> = ({
             {/* Fuel selector */}
             <div className="lg:col-span-3">
               <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1 px-1">
-                Brandstof
+                {t.fuel}
               </label>
               <select
                 value={selectedFuel}
                 onChange={(e) => setSelectedFuel(e.target.value)}
                 className="w-full bg-zinc-800/90 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-[#FF6B00]"
               >
-                <option value="">Alle Brandstoffen</option>
-                <option value="Benzine">Benzine</option>
-                <option value="Diesel">Diesel</option>
-                <option value="Hybride">Hybride</option>
-                <option value="Elektrisch">100% Elektrisch</option>
+                <option value="">{t.allFuels}</option>
+                <option value="Benzine">{t.petrol}</option>
+                <option value="Diesel">{t.diesel}</option>
+                <option value="Hybride">{t.hybrid}</option>
+                <option value="Elektrisch">{t.electric}</option>
               </select>
             </div>
 
             {/* Max budget selector */}
             <div className="lg:col-span-3">
               <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1 px-1">
-                Budget tot
+                {t.budget}
               </label>
               <select
                 value={selectedMaxPrice}
                 onChange={(e) => setSelectedMaxPrice(Number(e.target.value))}
                 className="w-full bg-zinc-800/90 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-[#FF6B00]"
               >
-                <option value={0}>Geen limiet</option>
-                <option value={20000}>Tot € 20.000</option>
-                <option value={35000}>Tot € 35.000</option>
-                <option value={50000}>Tot € 50.000</option>
-                <option value={75000}>Tot € 75.000</option>
-                <option value={100000}>Tot € 100.000+</option>
+                <option value={0}>{t.noLimit}</option>
+                <option value={20000}>{t.upTo} € 20.000</option>
+                <option value={35000}>{t.upTo} € 35.000</option>
+                <option value={50000}>{t.upTo} € 50.000</option>
+                <option value={75000}>{t.upTo} € 75.000</option>
+                <option value={100000}>{t.upTo} € 100.000+</option>
               </select>
             </div>
 
@@ -209,7 +208,7 @@ export const Hero: React.FC<HeroProps> = ({
                 className="w-full mt-auto bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-wider py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md shadow-orange-500/20"
               >
                 <Search className="w-4 h-4" />
-                <span>Zoek In Aanbod</span>
+                <span>{t.searchButton}</span>
                 <span className="ml-1 px-1.5 py-0.5 rounded bg-black/30 text-[10px] font-mono">
                   {totalCarsCount}
                 </span>
@@ -221,19 +220,19 @@ export const Hero: React.FC<HeroProps> = ({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-[11px] text-gray-400">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#FF6B00] shrink-0" />
-              <span>100% Car-Pass Historiek</span>
+              <span>{t.carPass100}</span>
             </div>
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>113 Traxio Controlepunten</span>
+              <span>{t.checks113}</span>
             </div>
             <div className="flex items-center gap-2">
               <Star className="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
-              <span>4.9 / 5 Google Score (280+ reviews)</span>
+              <span>{t.googleScore}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-[#FF6B00] shrink-0" />
-              <span>Directe Overname binnen 24u</span>
+              <span>{t.directTakeover}</span>
             </div>
           </div>
         </div>

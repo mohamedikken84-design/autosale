@@ -10,16 +10,24 @@ function countryToLanguage(countryCode: string): Language {
   if (code === 'NL') return 'nl';
   if (code === 'FR' || code === 'MC') return 'fr';
   if (code === 'DE' || code === 'AT') return 'de';
+  if (code === 'IT' || code === 'SM' || code === 'VA') return 'it';
+  if (code === 'PL') return 'pl';
+  if (['ES', 'MX', 'AR', 'CO', 'CL', 'PE', 'VE', 'EC', 'GT', 'CU', 'BO', 'DO', 'HN', 'PY', 'SV', 'NI', 'CR', 'PR', 'UY', 'PA'].includes(code)) {
+    return 'es';
+  }
   if (code === 'BE') {
-    // For Belgium, use browser preference if FR or DE, else NL
+    // For Belgium, check browser preference if FR, DE, ES, IT, PL, else NL
     const browserLang = navigator.language?.slice(0, 2).toLowerCase();
     if (browserLang === 'fr') return 'fr';
     if (browserLang === 'de') return 'de';
+    if (browserLang === 'it') return 'it';
+    if (browserLang === 'es') return 'es';
+    if (browserLang === 'pl') return 'pl';
     return 'nl';
   }
   // Default for non-EU or other countries: browser language or English
   const browser = navigator.language?.slice(0, 2).toLowerCase();
-  if (browser === 'nl' || browser === 'fr' || browser === 'de') {
+  if (browser === 'nl' || browser === 'fr' || browser === 'de' || browser === 'es' || browser === 'it' || browser === 'pl') {
     return browser as Language;
   }
   return 'en';
@@ -31,8 +39,8 @@ function countryToLanguage(countryCode: string): Language {
 export async function detectVisitorLanguage(): Promise<Language> {
   // 1. Manual user override in localStorage has highest priority
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && ['nl', 'fr', 'en', 'de'].includes(saved)) {
+    const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('auto_sale_lang');
+    if (saved && ['nl', 'fr', 'en', 'de', 'es', 'it', 'pl'].includes(saved)) {
       return saved as Language;
     }
   } catch {
@@ -57,9 +65,23 @@ export async function detectVisitorLanguage(): Promise<Language> {
 
   // 3. Fallback to browser language
   const browserLang = navigator.language?.slice(0, 2).toLowerCase();
+  if (browserLang === 'it') return 'it';
+  if (browserLang === 'es') return 'es';
+  if (browserLang === 'pl') return 'pl';
   if (browserLang === 'nl') return 'nl';
   if (browserLang === 'fr') return 'fr';
   if (browserLang === 'de') return 'de';
+
+  // 4. Timezone fallback
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.toLowerCase();
+    if (tz.includes('rome') || tz.includes('milan')) return 'it';
+    if (tz.includes('warsaw') || tz.includes('poland')) return 'pl';
+    if (tz.includes('madrid') || tz.includes('canary') || tz.includes('bogota') || tz.includes('mexico')) return 'es';
+  } catch {
+    // ignore
+  }
+
   return 'en';
 }
 

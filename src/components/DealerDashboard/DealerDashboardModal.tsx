@@ -32,7 +32,10 @@ import {
   Facebook,
   Link as LinkIcon,
   Save,
-  CheckCheck
+  CheckCheck,
+  GripVertical,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import {
   Car,
@@ -43,7 +46,10 @@ import {
   TransmissionType,
   BodyType
 } from '../../types';
-import { parseAutoScoutInput } from '../../utils/autoscoutParser';
+import { 
+  parseAutoScoutInput, 
+  fetchAndParseAutoScout 
+} from '../../utils/autoscoutParser';
 import { compressImage } from '../../utils/imageCompression';
 import { formatCurrencyPrice } from '../../utils/currency';
 
@@ -60,16 +66,17 @@ interface DealerDashboardModalProps {
   onRestoreCar?: (carId: string) => void;
   onPermanentDeleteCar?: (carId: string) => void;
   onToggleSold: (carId: string) => void;
-  onLoadSampleCars?: () => void;
   onImportBackup?: (cars: Car[]) => void;
   dealershipSettings: DealershipSettings;
   onSaveDealershipSettings?: (settings: DealershipSettings) => void;
   onSaveSettings?: (settings: DealershipSettings) => void;
   leads?: LeadInquiry[];
   onUpdateLeadStatus?: (leadId: string, status: 'new' | 'contacted' | 'closed') => void;
+  onDeleteLead?: (leadId: string) => void;
+  onClearAllLeads?: () => void;
 }
 
-type TabType = 'stock' | 'sold' | 'add' | 'autoscout' | 'leads' | 'settings' | 'trash' | 'backup';
+type TabType = 'stock' | 'sold' | 'add' | 'autoscout' | 'leads' | 'settings' | 'trash';
 
 export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
   isOpen,
@@ -84,22 +91,22 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
   onRestoreCar,
   onPermanentDeleteCar,
   onToggleSold,
-  onLoadSampleCars,
   onImportBackup,
   dealershipSettings,
   onSaveDealershipSettings,
   onSaveSettings,
   leads = [],
   onUpdateLeadStatus,
+  onDeleteLead,
+  onClearAllLeads,
 }) => {
-  const effectiveRole: UserRole = role || user || 'admin';
-  const effectiveUsername: string = username || (effectiveRole === 'admin' ? 'Michel / Beheerder' : 'Verkoper');
+  const effectiveRole: UserRole = 'admin';
+  const effectiveUsername: string = username || 'Michel / Beheerder';
   const safeLeads = leads || [];
   const handleSaveSettings = onSaveDealershipSettings || onSaveSettings || (() => {});
   const handlePermanentDelete = onPermanentDeleteCar || ((id: string) => onDeleteCar(id, false));
   const handleRestore = onRestoreCar || (() => {});
   const handleImportBackup = onImportBackup || (() => {});
-  const handleLoadSample = onLoadSampleCars || (() => {});
 
   const [activeTab, setActiveTab] = useState<TabType>('stock');
   const [editingCarId, setEditingCarId] = useState<string | null>(null);
@@ -143,6 +150,15 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
   const [autoscoutInput, setAutoscoutInput] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [parsedPreviewCar, setParsedPreviewCar] = useState<Partial<Car> | null>(null);
+  const [isLoadingImport, setIsLoadingImport] = useState(false);
+
+  // Drag and Drop state for Car Form Images
+  const [draggedFormIdx, setDraggedFormIdx] = useState<number | null>(null);
+  const [dragOverFormIdx, setDragOverFormIdx] = useState<number | null>(null);
+
+  // Drag and Drop state for AutoScout Preview Images
+  const [draggedPreviewIdx, setDraggedPreviewIdx] = useState<number | null>(null);
+  const [dragOverPreviewIdx, setDragOverPreviewIdx] = useState<number | null>(null);
 
   // Settings form
   const [settingsForm, setSettingsForm] = useState<DealershipSettings>(dealershipSettings);
@@ -151,6 +167,10 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
   // Search in stock/sold
   const [searchStock, setSearchStock] = useState('');
   const [stockBrandFilter, setStockBrandFilter] = useState('');
+
+  // Leads delete confirmation states (in-UI to avoid window.confirm blocked by browser iframes)
+  const [confirmDeleteLeadId, setConfirmDeleteLeadId] = useState<string | null>(null);
+  const [confirmClearAllLeads, setConfirmClearAllLeads] = useState(false);
 
   useEffect(() => {
     setSettingsForm(dealershipSettings);
@@ -273,6 +293,73 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
     });
   };
 
+  // Drag and Drop handlers for Car Form Images
+  const handleFormDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedFormIdx(index);
+    e.dataTransfer.setData('text/plain', String(index));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleFormDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverFormIdx !== index) {
+      setDragOverFormIdx(index);
+    }
+  };
+
+  const handleFormDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    const sourceIndex = draggedFormIdx !== null ? draggedFormIdx : parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (!isNaN(sourceIndex) && sourceIndex !== targetIndex) {
+      const current = [...(carForm.images || [])];
+      const [item] = current.splice(sourceIndex, 1);
+      current.splice(targetIndex, 0, item);
+      setCarForm((prev) => ({ ...prev, images: current }));
+    }
+    setDraggedFormIdx(null);
+    setDragOverFormIdx(null);
+  };
+
+  const handleFormDragEnd = () => {
+    setDraggedFormIdx(null);
+    setDragOverFormIdx(null);
+  };
+
+  // Drag and Drop handlers for AutoScout Preview Images
+  const handlePreviewDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedPreviewIdx(index);
+    e.dataTransfer.setData('text/plain', String(index));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handlePreviewDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverPreviewIdx !== index) {
+      setDragOverPreviewIdx(index);
+    }
+  };
+
+  const handlePreviewDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (!parsedPreviewCar || !parsedPreviewCar.images) return;
+    const sourceIndex = draggedPreviewIdx !== null ? draggedPreviewIdx : parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (!isNaN(sourceIndex) && sourceIndex !== targetIndex) {
+      const current = [...parsedPreviewCar.images];
+      const [item] = current.splice(sourceIndex, 1);
+      current.splice(targetIndex, 0, item);
+      setParsedPreviewCar({ ...parsedPreviewCar, images: current });
+    }
+    setDraggedPreviewIdx(null);
+    setDragOverPreviewIdx(null);
+  };
+
+  const handlePreviewDragEnd = () => {
+    setDraggedPreviewIdx(null);
+    setDragOverPreviewIdx(null);
+  };
+
   // Handle Save Car Form
   const handleSubmitCarForm = (e: React.FormEvent) => {
     e.preventDefault();
@@ -303,7 +390,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
       bodyType: (carForm.bodyType as BodyType) || 'SUV / 4x4',
       images: carForm.images && carForm.images.length > 0 
         ? carForm.images 
-        : ['https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80'],
+        : ['/logo2.png'],
       videoUrl: carForm.videoUrl?.trim() || '',
       licensePlate: carForm.licensePlate?.trim() || '',
       featured: carForm.featured || false,
@@ -332,23 +419,27 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
   };
 
   // AutoScout Import handler
-  const handleAutoScoutParse = () => {
+  const handleAutoScoutParse = async () => {
     if (!autoscoutInput.trim()) {
       alert('Plak a.u.b. een AutoScout24 link of advertentietekst.');
       return;
     }
 
-    setImportStatus('Advertentie analyseren & foto’s extraheren...');
+    setIsLoadingImport(true);
+    setImportStatus('Live AutoScout24 advertentie analyseren en originele foto’s ophalen...');
     try {
-      const parsed = parseAutoScoutInput(autoscoutInput);
+      const parsed = await fetchAndParseAutoScout(autoscoutInput);
       setParsedPreviewCar({
         ...defaultCarForm,
         ...parsed,
         vatDeductible: parsed.priceType === 'BTW Aftrekbaar',
+        status: 'available',
       });
-      setImportStatus(`Succesvol geïmporteerd! ${parsed.images?.length || 0} foto's en specificaties klaargezet.`);
-    } catch {
-      setImportStatus('Fout bij analyseren. Controleer de ingevoerde tekst of link.');
+      setImportStatus(`Succesvol opgehaald! ${parsed.images?.length || 0} originele foto's en specificaties klaargezet.`);
+    } catch (err: any) {
+      setImportStatus(`Fout bij analyseren: ${err?.message || 'Controleer de AutoScout24 advertentielink.'}`);
+    } finally {
+      setIsLoadingImport(false);
     }
   };
 
@@ -374,17 +465,17 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
       bodyType: (parsedPreviewCar.bodyType as BodyType) || 'SUV / 4x4',
       images: parsedPreviewCar.images && parsedPreviewCar.images.length > 0 
         ? parsedPreviewCar.images 
-        : ['https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80'],
+        : ['/logo2.png'],
       videoUrl: parsedPreviewCar.videoUrl || '',
       licensePlate: '',
       featured: false,
       category: 'premium',
-      carPassId: `CP-${Math.floor(10000000 + Math.random() * 90000000)}`,
+      carPassId: parsedPreviewCar.carPassId || `CP-${Math.floor(10000000 + Math.random() * 90000000)}`,
       warrantyMonths: 12,
       highlightSpecs: [`${parsedPreviewCar.powerHp || 150} PK`, `${parsedPreviewCar.transmission || 'Automaat'}`],
       options: parsedPreviewCar.options || ['LED Koplampen', 'Navigatie'],
       description: parsedPreviewCar.description || '',
-      status: 'available',
+      status: parsedPreviewCar.status || 'available',
       viewsCount: 0,
       branchId: 'main',
     };
@@ -393,7 +484,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
     setParsedPreviewCar(null);
     setAutoscoutInput('');
     setImportStatus(null);
-    setActiveTab('stock');
+    setActiveTab(carToSave.status === 'sold' ? 'sold' : 'stock');
   };
 
   const handleTransferPreviewToForm = () => {
@@ -424,40 +515,40 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="relative w-full max-w-7xl bg-[#141416] text-white rounded-3xl border border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+      <div className="relative w-full max-w-7xl bg-[#141416] text-white sm:rounded-3xl border-0 sm:border border-zinc-800 shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[92vh]">
         
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between px-5 sm:px-8 py-4 border-b border-zinc-800/90 bg-zinc-950/70">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 p-1 flex items-center justify-center shrink-0">
+        <div className="flex items-center justify-between px-3.5 sm:px-8 py-3 sm:py-4 border-b border-zinc-800/90 bg-zinc-950/80 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 p-1 flex items-center justify-center shrink-0">
               <img src="/logo2.png" alt="Auto Sale" className="w-full h-full object-contain" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-sm sm:text-base font-['Outfit',sans-serif] tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="font-black text-xs sm:text-base font-['Outfit',sans-serif] tracking-tight truncate">
                   Auto Sale NV • Beheerportaal
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30">
-                  {effectiveRole === 'admin' ? 'Directie' : 'Verkoop'}
+                <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30 shrink-0">
+                  Beheerder
                 </span>
               </div>
-              <p className="text-[11px] text-gray-400">
+              <p className="text-[10px] sm:text-[11px] text-gray-400 truncate">
                 Aangemeld als: <strong className="text-gray-200">{effectiveUsername}</strong>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={onLogout}
-              className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-zinc-800 text-gray-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-1.5 rounded-xl border border-zinc-800 text-gray-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               Uitloggen
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-2xl text-gray-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl sm:rounded-2xl text-gray-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
               title="Sluiten"
             >
               <X className="w-5 h-5" />
@@ -466,7 +557,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
         </div>
 
         {/* Navigation Tabs Bar */}
-        <div className="flex items-center gap-1.5 px-4 sm:px-6 py-2.5 bg-black/40 border-b border-zinc-800 overflow-x-auto text-xs font-bold scrollbar-none">
+        <div className="flex items-center gap-1.5 px-3 sm:px-6 py-2.5 bg-black/40 border-b border-zinc-800 overflow-x-auto text-xs font-bold scrollbar-none shrink-0 touch-pan-x">
           <button
             onClick={() => {
               setActiveTab('stock');
@@ -559,28 +650,16 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
             <Trash2 className="w-4 h-4" />
             <span>Prullenbak ({trashedCars.length})</span>
           </button>
-
-          <button
-            onClick={() => setActiveTab('backup')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'backup'
-                ? 'bg-[#FF6B00] text-white shadow-sm'
-                : 'text-gray-400 hover:text-white hover:bg-zinc-800/60'
-            }`}
-          >
-            <Download className="w-4 h-4" />
-            <span>Backup</span>
-          </button>
         </div>
 
         {/* Content Container */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 lg:p-8 space-y-6">
 
           {/* TAB 1: ACTIEVE VOORRAAD */}
           {activeTab === 'stock' && (
             <div className="space-y-4">
               {/* Controls Bar */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-zinc-900/60 p-3.5 sm:p-4 rounded-2xl border border-zinc-800">
                 <div className="flex items-center gap-2 flex-1 max-w-md">
                   <input
                     type="text"
@@ -598,7 +677,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                       setEditingCarId(null);
                       setActiveTab('add');
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Nieuwe Wagen</span>
@@ -606,9 +685,81 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                 </div>
               </div>
 
-              {/* Cars Table */}
-              <div className="rounded-2xl border border-zinc-800 overflow-hidden bg-zinc-900/40">
-                <table className="w-full text-left text-xs">
+              {/* Mobile View: Car Cards */}
+              <div className="md:hidden space-y-3">
+                {filteredAvailableCars.length === 0 ? (
+                  <div className="py-10 text-center text-gray-500 bg-zinc-900/40 rounded-2xl border border-zinc-800 p-4 text-xs">
+                    Geen actieve wagens gevonden. Klik op "Nieuwe Wagen" of gebruik de AutoScout24 Importer.
+                  </div>
+                ) : (
+                  filteredAvailableCars.map((car) => (
+                    <div key={car.id} className="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-3.5 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-20 h-16 rounded-xl overflow-hidden bg-black shrink-0 relative border border-zinc-700/50">
+                          <img src={car.images[0]} alt="" className="w-full h-full object-cover" />
+                          <span className="absolute bottom-0 right-0 bg-black/85 text-[8px] font-bold px-1 text-gray-300">
+                            {car.images.length} foto's
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-1.5">
+                            <span className="font-bold text-white text-xs truncate">
+                              {car.brand} {car.model}
+                            </span>
+                            {car.status === 'reserved' ? (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 shrink-0">
+                                Gereserveerd
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                                Te Koop
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-gray-400 truncate">
+                            {car.edition || car.category}
+                          </div>
+                          <div className="text-[11px] text-gray-400 mt-0.5">
+                            {car.year} • {car.mileage.toLocaleString('nl-BE')} km • {car.fuel}
+                          </div>
+                          <div className="text-sm font-extrabold text-[#FF6B00] mt-0.5">
+                            {formatCurrencyPrice(car.price, 'EUR')}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mobile Action Buttons */}
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800/80">
+                        <button
+                          onClick={() => handleStartEditCar(car)}
+                          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          <Edit className="w-3.5 h-3.5 text-[#FF6B00]" />
+                          <span>Bewerken</span>
+                        </button>
+                        <button
+                          onClick={() => onToggleSold(car.id)}
+                          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-emerald-950/50 hover:bg-emerald-600/30 text-emerald-400 text-xs font-bold border border-emerald-600/40 transition-colors cursor-pointer"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Verkocht</span>
+                        </button>
+                        <button
+                          onClick={() => onDeleteCar(car.id, true)}
+                          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-zinc-800 hover:bg-red-900/40 text-gray-400 hover:text-red-400 text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Wissen</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop View: Cars Table */}
+              <div className="hidden md:block rounded-2xl border border-zinc-800 overflow-hidden bg-zinc-900/40 overflow-x-auto">
+                <table className="w-full text-left text-xs min-w-[700px]">
                   <thead className="bg-zinc-900/90 text-gray-400 uppercase font-black tracking-wider text-[10px] border-b border-zinc-800">
                     <tr>
                       <th className="py-3 px-4">Voertuig</th>
@@ -655,9 +806,15 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                             {formatCurrencyPrice(car.price, 'EUR')}
                           </td>
                           <td className="py-3 px-3 text-center">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                              Te Koop
-                            </span>
+                            {car.status === 'reserved' ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                Gereserveerd
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                Te Koop
+                              </span>
+                            )}
                           </td>
                           <td className="py-3 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
@@ -697,8 +854,8 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
           {activeTab === 'sold' && (
             <div className="space-y-6">
               {/* Sold Stats Banner */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-zinc-900/60 p-5 rounded-2xl border border-zinc-800">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="bg-zinc-900/60 p-4 sm:p-5 rounded-2xl border border-zinc-800">
                   <span className="text-[11px] uppercase font-bold text-gray-400 block mb-1">
                     Totaal Verkochte Wagens
                   </span>
@@ -710,7 +867,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                   </span>
                 </div>
 
-                <div className="bg-zinc-900/60 p-5 rounded-2xl border border-zinc-800">
+                <div className="bg-zinc-900/60 p-4 sm:p-5 rounded-2xl border border-zinc-800">
                   <span className="text-[11px] uppercase font-bold text-gray-400 block mb-1">
                     Gerealiseerd Verkoopvolume
                   </span>
@@ -722,7 +879,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                   </span>
                 </div>
 
-                <div className="bg-zinc-900/60 p-5 rounded-2xl border border-zinc-800">
+                <div className="bg-zinc-900/60 p-4 sm:p-5 rounded-2xl border border-zinc-800">
                   <span className="text-[11px] uppercase font-bold text-gray-400 block mb-1">
                     Publieke Weergave
                   </span>
@@ -735,9 +892,72 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                 </div>
               </div>
 
-              {/* Sold Cars Table */}
-              <div className="rounded-2xl border border-zinc-800 overflow-hidden bg-zinc-900/40">
-                <table className="w-full text-left text-xs">
+              {/* Mobile View: Sold Car Cards */}
+              <div className="md:hidden space-y-3">
+                {filteredSoldCars.length === 0 ? (
+                  <div className="py-10 text-center text-gray-500 bg-zinc-900/40 rounded-2xl border border-zinc-800 p-4 text-xs">
+                    Er staan momenteel geen wagens gemarkeerd als verkocht. Klik in de Actieve Voorraad op "Verkocht" om een wagen hierheen te verplaatsen.
+                  </div>
+                ) : (
+                  filteredSoldCars.map((car) => (
+                    <div key={car.id} className="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-3.5 space-y-3 opacity-95">
+                      <div className="flex items-start gap-3">
+                        <div className="w-20 h-16 rounded-xl overflow-hidden bg-black shrink-0 relative border border-zinc-700/50 grayscale">
+                          <img src={car.images[0]} alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-1.5">
+                            <span className="font-bold text-white text-xs truncate line-through decoration-gray-500">
+                              {car.brand} {car.model}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">
+                              VERKOCHT
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-gray-400 truncate">
+                            {car.edition || car.category}
+                          </div>
+                          <div className="text-[11px] text-gray-400 mt-0.5">
+                            {car.year} • {car.mileage.toLocaleString('nl-BE')} km
+                          </div>
+                          <div className="text-sm font-extrabold text-gray-300 mt-0.5">
+                            {formatCurrencyPrice(car.price, 'EUR')}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mobile Action Buttons */}
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800/80">
+                        <button
+                          onClick={() => onToggleSold(car.id)}
+                          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-zinc-800 hover:bg-[#FF6B00] text-white text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Herstel</span>
+                        </button>
+                        <button
+                          onClick={() => handleStartEditCar(car)}
+                          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-gray-300 hover:text-white text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                          <span>Bewerk</span>
+                        </button>
+                        <button
+                          onClick={() => onDeleteCar(car.id, true)}
+                          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-zinc-800 hover:bg-red-900/40 text-gray-400 hover:text-red-400 text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Wissen</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop View: Sold Cars Table */}
+              <div className="hidden md:block rounded-2xl border border-zinc-800 overflow-hidden bg-zinc-900/40 overflow-x-auto">
+                <table className="w-full text-left text-xs min-w-[700px]">
                   <thead className="bg-zinc-900/90 text-gray-400 uppercase font-black tracking-wider text-[10px] border-b border-zinc-800">
                     <tr>
                       <th className="py-3 px-4">Verkocht Voertuig</th>
@@ -976,23 +1196,23 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                     onChange={(e) => setCarForm({ ...carForm, status: e.target.value as any })}
                     className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-white font-bold"
                   >
-                    <option value="available">Te Koop (Actieve voorraad)</option>
+                    <option value="available">Te Koop (Direct beschikbaar in showroom)</option>
                     <option value="reserved">Gereserveerd</option>
                     <option value="sold">VERKOCHT</option>
                   </select>
                 </div>
               </div>
 
-              {/* FOTOBEHEER & SORTERING (HOOFDFOTO KIEZEN, VOLGORDE AANPASSEN) */}
+              {/* FOTOBEHEER & DRAG-AND-DROP SORTERING */}
               <div className="bg-zinc-900/70 p-5 rounded-3xl border border-zinc-800 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h4 className="font-bold text-sm text-white flex items-center gap-2">
                       <Camera className="w-4 h-4 text-[#FF6B00]" />
-                      <span>Fotogalerij & Sortering ({carForm.images?.length || 0} foto's)</span>
+                      <span>Fotogalerij & Volgorde Aanpassen ({carForm.images?.length || 0} foto's)</span>
                     </h4>
                     <p className="text-[11px] text-gray-400">
-                      De eerste foto is de <strong>Hoofdfoto</strong>. Gebruik de knoppen om de volgorde aan te passen of een andere foto als hoofdfoto te kiezen.
+                      <strong>Versleep foto's (drag-and-drop)</strong> om de volgorde direct aan te passen. De eerste foto is automatisch de <strong>Hoofdfoto</strong>.
                     </p>
                   </div>
 
@@ -1017,7 +1237,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                     placeholder="Of plak directe foto URL(s) (gescheiden door komma)..."
                     value={urlPasteInput}
                     onChange={(e) => setUrlPasteInput(e.target.value)}
-                    className="flex-1 bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white"
+                    className="flex-1 bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white placeholder:text-zinc-500"
                   />
                   <button
                     type="button"
@@ -1028,26 +1248,41 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                   </button>
                 </div>
 
-                {/* Interactive Reorderable Photo Grid */}
+                {/* Interactive Drag & Drop Photo Grid */}
                 {carForm.images && carForm.images.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pt-2">
                     {carForm.images.map((img, idx) => (
                       <div
                         key={idx}
-                        className={`relative rounded-2xl overflow-hidden group bg-black border-2 transition-all ${
-                          idx === 0 ? 'border-[#FF6B00] shadow-md ring-2 ring-[#FF6B00]/20' : 'border-zinc-800'
+                        draggable
+                        onDragStart={(e) => handleFormDragStart(e, idx)}
+                        onDragOver={(e) => handleFormDragOver(e, idx)}
+                        onDrop={(e) => handleFormDrop(e, idx)}
+                        onDragEnd={handleFormDragEnd}
+                        className={`relative rounded-2xl overflow-hidden group bg-black border-2 transition-all cursor-grab active:cursor-grabbing select-none ${
+                          dragOverFormIdx === idx
+                            ? 'border-[#FF6B00] ring-4 ring-[#FF6B00]/40 scale-102 z-20 shadow-2xl'
+                            : draggedFormIdx === idx
+                            ? 'opacity-30 border-dashed border-gray-500'
+                            : idx === 0
+                            ? 'border-[#FF6B00] shadow-md ring-2 ring-[#FF6B00]/20'
+                            : 'border-zinc-800 hover:border-zinc-600'
                         }`}
+                        title="Versleep deze foto naar een andere positie"
                       >
-                        <div className="aspect-[4/3] w-full">
-                          <img src={img} alt="" className="w-full h-full object-cover" />
+                        <div className="aspect-[4/3] w-full relative">
+                          <img src={img} alt="" className="w-full h-full object-cover pointer-events-none" />
                         </div>
 
-                        {/* Top Badge: Number / Main */}
-                        <div className="absolute top-1.5 left-1.5 z-10">
+                        {/* Top Badge: Number / Main + Drag Grip Icon */}
+                        <div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1">
+                          <div className="p-1 rounded-md bg-black/80 text-white/90 shadow-xs flex items-center justify-center">
+                            <GripVertical className="w-3 h-3" />
+                          </div>
                           {idx === 0 ? (
                             <span className="px-2 py-0.5 rounded-md bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
                               <Star className="w-2.5 h-2.5 fill-white" />
-                              Hoofdfoto
+                              Hoofd
                             </span>
                           ) : (
                             <span className="px-1.5 py-0.5 rounded-md bg-black/70 text-gray-300 text-[10px] font-bold">
@@ -1057,14 +1292,16 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                         </div>
 
                         {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(idx)}
-                          title="Foto verwijderen"
-                          className="absolute top-1.5 right-1.5 p-1 rounded-full bg-red-600/90 hover:bg-red-600 text-white transition-opacity cursor-pointer shadow-sm z-10"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
+                        <div className="absolute top-1.5 right-1.5 z-10">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            title="Foto verwijderen"
+                            className="p-1.5 rounded-full bg-red-600/90 hover:bg-red-600 text-white transition-opacity cursor-pointer shadow-sm"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
 
                         {/* Action Toolbar on Bottom */}
                         <div className="p-1.5 bg-zinc-950/90 flex items-center justify-between gap-1 text-gray-300 border-t border-zinc-800">
@@ -1073,7 +1310,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                             onClick={() => handleMoveImage(idx, 'left')}
                             disabled={idx === 0}
                             title="Verplaats naar links"
-                            className="p-1 rounded hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            className="p-1 rounded hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
                           >
                             <ChevronLeft className="w-3.5 h-3.5" />
                           </button>
@@ -1092,9 +1329,9 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                           <button
                             type="button"
                             onClick={() => handleMoveImage(idx, 'right')}
-                            disabled={idx === carForm.images.length - 1}
+                            disabled={idx === (carForm.images?.length || 0) - 1}
                             title="Verplaats naar rechts"
-                            className="p-1 rounded hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            className="p-1 rounded hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
                           >
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
@@ -1246,38 +1483,67 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                   </span>
                   <button
                     onClick={handleAutoScoutParse}
-                    className="px-6 py-3 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase tracking-wider text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                    disabled={isLoadingImport}
+                    className="px-6 py-3 bg-[#FF6B00] hover:bg-orange-600 disabled:opacity-50 text-white font-bold uppercase tracking-wider text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <Sparkles className="w-4 h-4" />
-                    <span>Advertentie & Foto's Ophalen</span>
+                    {isLoadingImport ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <span>Advertentie & Originele Foto's Ophalen...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Advertentie & Echte Foto's Ophalen</span>
+                      </>
+                    )}
                   </button>
                 </div>
 
                 {importStatus && (
-                  <div className="p-3.5 rounded-2xl bg-[#FF6B00]/10 border border-[#FF6B00]/30 text-white text-xs font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#FF6B00] shrink-0" />
-                    <span>{importStatus}</span>
+                  <div className={`p-4 rounded-2xl border text-xs font-medium flex items-start gap-3 ${
+                    importStatus.startsWith('Fout') 
+                      ? 'bg-red-950/40 border-red-800/60 text-red-200' 
+                      : 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
+                  }`}>
+                    {importStatus.startsWith('Fout') ? (
+                      <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                    ) : (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <p className="font-bold text-white">{importStatus}</p>
+                      <p className="text-[11px] text-gray-300 mt-1">
+                        Alle merk-, model-, km- en prijsgegevens zijn uitgelezen. Enkel de authentieke voertuigfoto's van de advertentie worden overgenomen (geen stockfoto's).
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Interactive Imported Preview with Photo Sorting */}
+              {/* Interactive Imported Preview with Photo Sorting & Status */}
               {parsedPreviewCar && (
                 <div className="bg-zinc-900/90 p-6 rounded-3xl border-2 border-[#FF6B00] space-y-6 shadow-xl">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-zinc-800">
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6B00] bg-[#FF6B00]/10 px-2.5 py-1 rounded-full border border-[#FF6B00]/30">
-                        Geïmporteerd Concept
-                      </span>
-                      <h4 className="text-xl font-black mt-2 font-['Outfit',sans-serif]">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6B00] bg-[#FF6B00]/10 px-2.5 py-1 rounded-full border border-[#FF6B00]/30">
+                          Geïmporteerd Voertuig
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/20 px-2.5 py-1 rounded-full border border-emerald-500/30">
+                          Te Koop in Showroom
+                        </span>
+                      </div>
+
+                      <h4 className="text-xl font-black mt-2 font-['Outfit',sans-serif] text-white">
                         {parsedPreviewCar.brand} {parsedPreviewCar.model} {parsedPreviewCar.edition}
                       </h4>
-                      <p className="text-xs text-gray-400">
-                        {parsedPreviewCar.year} • {parsedPreviewCar.mileage?.toLocaleString('nl-BE')} km • {parsedPreviewCar.fuel} • {formatCurrencyPrice(parsedPreviewCar.price || 0, 'EUR')} ({parsedPreviewCar.priceType})
+                      <p className="text-xs text-gray-300 mt-1">
+                        Bouwjaar {parsedPreviewCar.year} • {parsedPreviewCar.mileage?.toLocaleString('nl-BE')} km • {parsedPreviewCar.fuel} • {parsedPreviewCar.transmission} • {parsedPreviewCar.powerHp} PK • {formatCurrencyPrice(parsedPreviewCar.price || 0, 'EUR')} ({parsedPreviewCar.priceType || 'Marge'})
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         onClick={handleTransferPreviewToForm}
                         className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition-colors cursor-pointer"
@@ -1294,15 +1560,64 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Photo Reorder Gallery for AutoScout Import */}
+                  {/* Status Selection & Quick Data Verification */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-zinc-950/80 rounded-2xl border border-zinc-800 text-xs">
+                    <div>
+                      <label className="block font-bold text-gray-300 mb-1">Status van de wagen</label>
+                      <select
+                        value={parsedPreviewCar.status || 'available'}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, status: e.target.value as any })}
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-white font-bold"
+                      >
+                        <option value="available">Te Koop (Direct in showroom)</option>
+                        <option value="reserved">Gereserveerd</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-300 mb-1">Vraagprijs (€)</label>
+                      <input
+                        type="number"
+                        value={parsedPreviewCar.price || ''}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, price: Number(e.target.value) })}
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-white font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-300 mb-1">Kilometerstand (km)</label>
+                      <input
+                        type="number"
+                        value={parsedPreviewCar.mileage || ''}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, mileage: Number(e.target.value) })}
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-300 mb-1">Brandstof & Versnelling</label>
+                      <div className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-gray-200">
+                        {parsedPreviewCar.fuel || 'Benzine'} • {parsedPreviewCar.transmission || 'Automaat'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Photo Reorder Gallery for AutoScout Import with Drag & Drop */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h5 className="font-bold text-xs uppercase tracking-wider text-gray-300 flex items-center gap-2">
-                        <Camera className="w-4 h-4 text-[#FF6B00]" />
-                        <span>Geïmporteerde Foto's ({parsedPreviewCar.images?.length || 0}) • Sorteer & Kies Hoofdfoto</span>
-                      </h5>
-                      <span className="text-[11px] text-gray-400">
-                        Klik op "Kies als Hoofd" of gebruik de pijltjes om de volgorde te bepalen
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h5 className="font-bold text-sm text-white flex items-center gap-2">
+                          <Camera className="w-4 h-4 text-[#FF6B00]" />
+                          <span>Echte Foto's van de Advertentie ({parsedPreviewCar.images?.length || 0})</span>
+                        </h5>
+                        <p className="text-[11px] text-gray-400">
+                          <strong>Versleep foto's (drag-and-drop)</strong> om de volgorde direct aan te passen. Foto #1 is automatisch de <strong>Hoofdfoto</strong>.
+                        </p>
+                      </div>
+
+                      <span className="text-[11px] text-emerald-400 font-semibold bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-800/50 flex items-center gap-1.5 self-start sm:self-auto">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Enkel originele advertentiefoto's</span>
                       </span>
                     </div>
 
@@ -1310,19 +1625,35 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                       {(parsedPreviewCar.images || []).map((img, idx) => (
                         <div
                           key={idx}
-                          className={`relative rounded-2xl overflow-hidden group bg-black border-2 transition-all ${
-                            idx === 0 ? 'border-[#FF6B00] shadow-md ring-2 ring-[#FF6B00]/20' : 'border-zinc-800'
+                          draggable
+                          onDragStart={(e) => handlePreviewDragStart(e, idx)}
+                          onDragOver={(e) => handlePreviewDragOver(e, idx)}
+                          onDrop={(e) => handlePreviewDrop(e, idx)}
+                          onDragEnd={handlePreviewDragEnd}
+                          className={`relative rounded-2xl overflow-hidden group bg-black border-2 transition-all cursor-grab active:cursor-grabbing select-none ${
+                            dragOverPreviewIdx === idx
+                              ? 'border-[#FF6B00] ring-4 ring-[#FF6B00]/40 scale-102 z-20 shadow-2xl'
+                              : draggedPreviewIdx === idx
+                              ? 'opacity-30 border-dashed border-gray-500'
+                              : idx === 0
+                              ? 'border-[#FF6B00] shadow-md ring-2 ring-[#FF6B00]/20'
+                              : 'border-zinc-800 hover:border-zinc-600'
                           }`}
+                          title="Versleep deze foto naar een andere positie"
                         >
-                          <div className="aspect-[4/3] w-full">
-                            <img src={img} alt="" className="w-full h-full object-cover" />
+                          <div className="aspect-[4/3] w-full relative">
+                            <img src={img} alt="" className="w-full h-full object-cover pointer-events-none" />
                           </div>
 
-                          <div className="absolute top-1.5 left-1.5 z-10">
+                          {/* Top Badge: Number / Main + Drag Grip Icon */}
+                          <div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1">
+                            <div className="p-1 rounded-md bg-black/80 text-white/90 shadow-xs flex items-center justify-center">
+                              <GripVertical className="w-3 h-3" />
+                            </div>
                             {idx === 0 ? (
                               <span className="px-2 py-0.5 rounded-md bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
                                 <Star className="w-2.5 h-2.5 fill-white" />
-                                Hoofdfoto
+                                Hoofd
                               </span>
                             ) : (
                               <span className="px-1.5 py-0.5 rounded-md bg-black/70 text-gray-300 text-[10px] font-bold">
@@ -1331,22 +1662,26 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                             )}
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => handlePreviewRemoveImage(idx)}
-                            title="Foto verwijderen"
-                            className="absolute top-1.5 right-1.5 p-1 rounded-full bg-red-600/90 hover:bg-red-600 text-white transition-opacity cursor-pointer shadow-sm z-10"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+                          {/* Delete Button */}
+                          <div className="absolute top-1.5 right-1.5 z-10">
+                            <button
+                              type="button"
+                              onClick={() => handlePreviewRemoveImage(idx)}
+                              title="Foto verwijderen"
+                              className="p-1.5 rounded-full bg-red-600/90 hover:bg-red-600 text-white transition-opacity cursor-pointer shadow-sm"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
 
+                          {/* Action Toolbar on Bottom */}
                           <div className="p-1.5 bg-zinc-950/90 flex items-center justify-between gap-1 text-gray-300 border-t border-zinc-800">
                             <button
                               type="button"
                               onClick={() => handlePreviewMoveImage(idx, 'left')}
                               disabled={idx === 0}
                               title="Verplaats naar links"
-                              className="p-1 rounded hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                              className="p-1 rounded hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
                             >
                               <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
@@ -1367,7 +1702,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                               onClick={() => handlePreviewMoveImage(idx, 'right')}
                               disabled={idx === (parsedPreviewCar.images?.length || 0) - 1}
                               title="Verplaats naar rechts"
-                              className="p-1 rounded hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                              className="p-1 rounded hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
                             >
                               <ChevronRight className="w-3.5 h-3.5" />
                             </button>
@@ -1390,10 +1725,43 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                     <Eye className="w-5 h-5 text-sky-400" />
                     <span>Binnenkomende Aanvragen & Leads ({safeLeads.length})</span>
                   </h3>
-                  <p className="text-xs text-gray-400">
-                    Alle berichten via het contactformulier, overname-aanvragen en financieringsverzoeken komen direct hier terecht.
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Automatische opschoning na 30 dagen • Handmatig beheren, direct contacteren of wissen
                   </p>
                 </div>
+                {safeLeads.length > 0 && onClearAllLeads && (
+                  confirmClearAllLeads ? (
+                    <div className="flex items-center gap-2 bg-red-950/80 border border-red-800 rounded-xl px-3 py-1.5 self-start sm:self-auto">
+                      <span className="text-xs text-red-200 font-bold">Alles wissen?</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClearAllLeads();
+                          setConfirmClearAllLeads(false);
+                        }}
+                        className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        Ja, wissen
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmClearAllLeads(false)}
+                        className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-gray-300 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        Annuleren
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmClearAllLeads(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-800/60 text-xs font-bold transition-colors cursor-pointer self-start sm:self-auto"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Alle Leads Wissen</span>
+                    </button>
+                  )
+                )}
               </div>
 
               {safeLeads.length === 0 ? (
@@ -1425,13 +1793,13 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                             {lead.status === 'new' ? 'Nieuw' : lead.status === 'contacted' ? 'In Behandeling' : 'Afgerond'}
                           </span>
                           <span className="text-xs text-gray-400 font-mono">
-                            {new Date(lead.createdAt).toLocaleDateString('nl-BE', {
+                            {lead.date || (lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('nl-BE', {
                               day: '2-digit',
                               month: '2-digit',
                               year: 'numeric',
                               hour: '2-digit',
                               minute: '2-digit',
-                            })}
+                            }) : 'Onlangs')}
                           </span>
                         </div>
 
@@ -1464,6 +1832,40 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                               <option value="contacted">In Behandeling</option>
                               <option value="closed">Afgerond</option>
                             </select>
+                          )}
+
+                          {onDeleteLead && (
+                            confirmDeleteLeadId === lead.id ? (
+                              <div className="flex items-center gap-1.5 bg-red-950/80 border border-red-800 rounded-xl px-2 py-1">
+                                <span className="text-[11px] text-red-200 font-bold whitespace-nowrap">Wissen?</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onDeleteLead(lead.id);
+                                    setConfirmDeleteLeadId(null);
+                                  }}
+                                  className="px-2 py-0.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                                >
+                                  Ja
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteLeadId(null)}
+                                  className="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-gray-300 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                                >
+                                  Nee
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteLeadId(lead.id)}
+                                title="Aanvraag verwijderen"
+                                className="p-1.5 rounded-xl bg-zinc-800 hover:bg-red-900/50 text-gray-400 hover:text-red-400 transition-colors cursor-pointer border border-zinc-700"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )
                           )}
                         </div>
                       </div>
@@ -1768,47 +2170,6 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                   ))}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* TAB 8: BACKUP */}
-          {activeTab === 'backup' && (
-            <div className="max-w-2xl mx-auto space-y-6">
-              <div className="bg-zinc-900/60 p-6 rounded-3xl border border-zinc-800 space-y-4">
-                <h3 className="text-base font-black font-['Outfit',sans-serif]">
-                  Data Export & Import
-                </h3>
-                <p className="text-xs text-gray-400">
-                  Exporteer uw actuele wagenvoorraad als JSON bestand voor archivering of importeer een eerder gemaakte backup.
-                </p>
-
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <button
-                    onClick={() => {
-                      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(cars, null, 2));
-                      const downloadAnchor = document.createElement('a');
-                      downloadAnchor.setAttribute('href', dataStr);
-                      downloadAnchor.setAttribute('download', `auto_sale_stock_${new Date().toISOString().slice(0,10)}.json`);
-                      document.body.appendChild(downloadAnchor);
-                      downloadAnchor.click();
-                      downloadAnchor.remove();
-                    }}
-                    className="px-5 py-2.5 rounded-xl bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs transition-all cursor-pointer flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Download Stock Backup (JSON)</span>
-                  </button>
-
-                  {handleLoadSample && (
-                    <button
-                      onClick={handleLoadSample}
-                      className="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-gray-300 font-bold text-xs transition-colors cursor-pointer"
-                    >
-                      Standaard Voorraad Herladen
-                    </button>
-                  )}
-                </div>
-              </div>
             </div>
           )}
 

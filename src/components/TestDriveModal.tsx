@@ -12,8 +12,9 @@ import {
   Send
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Car, TestDriveBooking } from '../types';
+import { Car, TestDriveBooking, Language } from '../types';
 import { DEALERSHIP_INFO } from '../data/dealership';
+import { TRANSLATIONS } from '../i18n/translations';
 
 interface TestDriveModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ interface TestDriveModalProps {
   selectedCar: Car | null;
   allCars: Car[];
   onBookingSuccess?: (booking: TestDriveBooking) => void;
+  language?: Language;
 }
 
 export const TestDriveModal: React.FC<TestDriveModalProps> = ({
@@ -28,8 +30,10 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
   onClose,
   selectedCar,
   allCars,
-  onBookingSuccess
+  onBookingSuccess,
+  language = 'nl'
 }) => {
+  const t = TRANSLATIONS[language]?.testDrive || TRANSLATIONS.nl.testDrive;
   const [activeCarId, setActiveCarId] = useState<string>(selectedCar ? selectedCar.id : (allCars[0]?.id || ''));
   const [formData, setFormData] = useState<TestDriveBooking>({
     carId: selectedCar ? selectedCar.id : '',
@@ -89,10 +93,10 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-black font-['Outfit',sans-serif]">
-                Plan een Vrijblijvende Proefrit
+                {t.title}
               </h3>
               <p className="text-[11px] text-gray-400 font-medium">
-                Ervaar het rijcomfort bij Auto Sale te Hoboken (Antwerpen)
+                {t.subtitle}
               </p>
             </div>
           </div>
@@ -112,7 +116,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
               {/* Selected Car Preview / Switcher */}
               <div>
                 <label className="block text-xs font-black text-[#1A1A1A] uppercase tracking-wider mb-2">
-                  Gekozen Voertuig
+                  {t.selectCar}
                 </label>
                 <select
                   value={activeCarId}
@@ -160,7 +164,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-black text-[#1A1A1A] uppercase tracking-wider mb-2">
-                    Gewenste Datum *
+                    {t.date} *
                   </label>
                   <div className="relative">
                     <input
@@ -176,7 +180,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-black text-[#1A1A1A] uppercase tracking-wider mb-2">
-                    Voorkeurstijdstip *
+                    {t.time} *
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {timeSlots.map((slot) => (
@@ -199,16 +203,15 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
               {/* Personal Info */}
               <div className="space-y-3 pt-2">
-                <label className="block text-xs font-black text-[#1A1A1A] uppercase tracking-wider">
-                  Uw Contactgegevens
-                </label>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      {t.fullName} *
+                    </label>
                     <input
                       type="text"
                       required
-                      placeholder="Volledige naam"
+                      placeholder={t.fullName}
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
@@ -216,10 +219,13 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                   </div>
 
                   <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      {t.phone} *
+                    </label>
                     <input
                       type="tel"
                       required
-                      placeholder="Telefoonnummer (+32...)"
+                      placeholder="+32 4XX XX XX XX"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
@@ -228,10 +234,13 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                 </div>
 
                 <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    {t.email} *
+                  </label>
                   <input
                     type="email"
                     required
-                    placeholder="E-mailadres"
+                    placeholder="email@..."
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
@@ -239,9 +248,12 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                 </div>
 
                 <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    {t.remarks}
+                  </label>
                   <textarea
                     rows={2}
-                    placeholder="Eventuele opmerkingen of vragen..."
+                    placeholder="..."
                     value={formData.remarks}
                     onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
                     className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl p-3.5 text-xs focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
@@ -259,7 +271,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                   className="mt-0.5 accent-[#FF6B00] rounded"
                 />
                 <span>
-                  Ik ben in het bezit van een geldig rijbewijs B en neem dit mee naar de afspraak.
+                  {t.drivingLicense}
                 </span>
               </label>
 
@@ -269,7 +281,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                 className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-4 px-4 rounded-2xl shadow-md transition-all cursor-pointer"
               >
                 <Send className="w-4 h-4" />
-                <span>Afspraak Definitief Bevestigen</span>
+                <span>{t.submit}</span>
               </button>
             </form>
           ) : (
@@ -279,17 +291,14 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <h3 className="text-2xl font-black font-['Outfit',sans-serif] text-[#1A1A1A]">
-                Proefrit Aangevraagd!
+                {t.successTitle}
               </h3>
               <p className="text-sm text-gray-600 max-w-md mx-auto leading-relaxed font-medium">
-                Bedankt <strong>{formData.fullName}</strong>. Wij hebben uw aanvraag voor de{' '}
-                <strong>{currentCar?.brand} {currentCar?.model}</strong> op{' '}
-                <strong>{formData.date} om {formData.timeSlot} uur</strong> ontvangen.
-                U ontvangt ter bevestiging een e-mail en sms.
+                {t.successText}
               </p>
 
               <div className="p-5 rounded-3xl bg-[#F8F8F8] border border-gray-200 text-xs text-gray-600 max-w-sm mx-auto text-left space-y-1.5 font-medium">
-                <div className="font-black text-[#1A1A1A]">Locatie afspraak:</div>
+                <div className="font-black text-[#1A1A1A]">Auto Sale Antwerpen</div>
                 <div>{DEALERSHIP_INFO.name}</div>
                 <div>{DEALERSHIP_INFO.address.full}</div>
                 <div className="text-[#FF6B00] font-bold pt-1">
@@ -301,7 +310,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                 onClick={onClose}
                 className="inline-block bg-[#1A1A1A] hover:bg-black text-white text-xs font-bold uppercase tracking-wider px-8 py-3 rounded-2xl cursor-pointer transition-colors"
               >
-                Sluiten
+                {t.close}
               </button>
             </div>
           )}

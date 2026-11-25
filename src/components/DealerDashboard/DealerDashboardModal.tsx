@@ -35,7 +35,8 @@ import {
   CheckCheck,
   GripVertical,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  FileCode
 } from 'lucide-react';
 import {
   Car,
@@ -46,10 +47,7 @@ import {
   TransmissionType,
   BodyType
 } from '../../types';
-import { 
-  parseAutoScoutInput, 
-  fetchAndParseAutoScout 
-} from '../../utils/autoscoutParser';
+import { fetchAndParseAutoScout } from '../../utils/autoscoutParser';
 import { compressImage } from '../../utils/imageCompression';
 import { formatCurrencyPrice } from '../../utils/currency';
 
@@ -142,13 +140,21 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
   };
 
   const [carForm, setCarForm] = useState<Partial<Car>>(defaultCarForm);
+  const [formError, setFormError] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const [newOptionInput, setNewOptionInput] = useState('');
   const [urlPasteInput, setUrlPasteInput] = useState('');
 
   // AutoScout import state
   const [autoscoutInput, setAutoscoutInput] = useState('');
-  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [uploadedHtmlName, setUploadedHtmlName] = useState<string | null>(null);
+  const [isDraggingHtmlFile, setIsDraggingHtmlFile] = useState(false);
+  const [newPreviewOption, setNewPreviewOption] = useState('');
+  const [importStatus, setImportStatus] = useState<{
+    type: 'success' | 'warning' | 'error';
+    text: string;
+    detail?: string;
+  } | null>(null);
   const [parsedPreviewCar, setParsedPreviewCar] = useState<Partial<Car> | null>(null);
   const [isLoadingImport, setIsLoadingImport] = useState(false);
 
@@ -363,8 +369,9 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
   // Handle Save Car Form
   const handleSubmitCarForm = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!carForm.brand || !carForm.model) {
-      alert('Vul a.u.b. ten minste het merk en model in.');
+    setFormError(null);
+    if (!carForm.brand?.trim() || !carForm.model?.trim()) {
+      setFormError('Vul a.u.b. ten minste het merk en model in.');
       return;
     }
 
@@ -408,38 +415,83 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
     onSaveCar(carToSave);
     setCarForm(defaultCarForm);
     setEditingCarId(null);
+    setFormError(null);
     setActiveTab(carToSave.status === 'sold' ? 'sold' : 'stock');
   };
 
   // Start editing car
   const handleStartEditCar = (car: Car) => {
+    setFormError(null);
     setCarForm(car);
     setEditingCarId(car.id);
     setActiveTab('add');
   };
 
   // AutoScout Import handler
-  const handleAutoScoutParse = async () => {
-    if (!autoscoutInput.trim()) {
-      alert('Plak a.u.b. een AutoScout24 link of advertentietekst.');
+  const handleAutoScoutParse = async (overrideRaw?: string) => {
+    const raw = (overrideRaw ?? autoscoutInput).trim();
+    if (!raw) {
+      setImportStatus({
+        type: 'error',
+        text: 'Plak eerst een AutoScout24 link, een paginabron (Ctrl+U), of sleep een opgeslagen .html bestand hierheen.',
+      });
       return;
     }
 
     setIsLoadingImport(true);
-    setImportStatus('Live AutoScout24 advertentie analyseren en originele foto’s ophalen...');
+    setImportStatus(null);
     try {
-      const parsed = await fetchAndParseAutoScout(autoscoutInput);
+      const result = await fetchAndParseAutoScout(raw);
+      const parsed = result.draft;
+      const hasImages = parsed.images && parsed.images.length > 0;
+      const hasPrice = parsed.price && parsed.price > 0;
+
+      if (result.blockedByCloudflare || result.method === 'url-slug' || (!hasImages && !hasPrice)) {
+        setImportStatus({
+          type: 'warning',
+          text:
+            result.message ||
+            'AutoScout24 blokkeert directe server-downloads vanaf Netlify (Cloudflare-beveiliging).',
+          detail:
+            'Snelste oplossing (100% succes): Open de AutoScout24-advertentie in uw browser, druk op Ctrl+U (Paginabron) -> Ctrl+A -> Ctrl+C en plak het hierboven — óf sla de pagina op (Ctrl+S) en sleep het .html bestand hieronder.',
+        });
+      } else {
+        setImportStatus({
+          type: 'success',
+          text:
+            result.message ||
+            `Succesvol opgehaald: ${parsed.brand} ${parsed.model} met ${parsed.images.length} originele foto's.`,
+          detail: 'Controleer de gegevens, pas eventueel de prijs of hoofdfoto aan en klik op Publiceren.',
+        });
+      }
+
       setParsedPreviewCar({
         ...defaultCarForm,
         ...parsed,
         vatDeductible: parsed.priceType === 'BTW Aftrekbaar',
         status: 'available',
       });
-      setImportStatus(`Succesvol opgehaald! ${parsed.images?.length || 0} originele foto's en specificaties klaargezet.`);
     } catch (err: any) {
-      setImportStatus(`Fout bij analyseren: ${err?.message || 'Controleer de AutoScout24 advertentielink.'}`);
+      setImportStatus({
+        type: 'error',
+        text: `Fout bij analyseren: ${err?.message || 'Controleer de invoer of plak de paginabron (Ctrl+U).'}`,
+      });
     } finally {
       setIsLoadingImport(false);
+    }
+  };
+
+  const handleAutoScoutHtmlFile = async (file: File) => {
+    if (!file) return;
+    setUploadedHtmlName(file.name);
+    try {
+      const text = await file.text();
+      await handleAutoScoutParse(text);
+    } catch {
+      setImportStatus({
+        type: 'error',
+        text: `Kon het bestand "${file.name}" niet uitlezen.`,
+      });
     }
   };
 
@@ -1145,8 +1197,8 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                   >
                     <option value="Benzine">Benzine</option>
                     <option value="Diesel">Diesel</option>
-                    <option value="Hybride">Hybride</option>
                     <option value="Plug-in Hybride">Plug-in Hybride</option>
+                    <option value="Mild Hybride">Mild Hybride</option>
                     <option value="Elektrisch">Elektrisch</option>
                   </select>
                 </div>
@@ -1422,6 +1474,13 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                 />
               </div>
 
+              {formError && (
+                <div className="p-3.5 rounded-xl bg-red-950/50 border border-red-800 text-red-200 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
               {/* Form Actieknoppen */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
                 <button
@@ -1429,6 +1488,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                   onClick={() => {
                     setEditingCarId(null);
                     setCarForm(defaultCarForm);
+                    setFormError(null);
                     setActiveTab('stock');
                   }}
                   className="px-5 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-gray-300 font-bold text-xs cursor-pointer transition-colors"
@@ -1446,113 +1506,177 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
             </form>
           )}
 
-          {/* TAB 4: AUTOSCOUT24 IMPORT (ALLE FOTO'S & INTERACTIEVE SORTERING) */}
+          {/* TAB 4: AUTOSCOUT24 IMPORT */}
           {activeTab === 'autoscout' && (
-            <div className="max-w-4xl mx-auto space-y-6">
-              <div className="bg-zinc-900/70 p-6 rounded-3xl border border-zinc-800 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black font-['Outfit',sans-serif]">
-                      AutoScout24 Volledige Advertentie Import
-                    </h3>
-                    <p className="text-xs text-gray-400">
-                      Haal merk, model, prijs, km-stand, specificaties én <strong>alle foto's</strong> automatisch op. U kunt de foto's direct hieronder sorteren en de hoofdfoto kiezen voor publicatie.
-                    </p>
+            <div className="max-w-5xl mx-auto space-y-6">
+              <div className="bg-zinc-900/70 p-5 sm:p-6 rounded-2xl border border-zinc-800 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#FF6B00]/15 border border-[#FF6B00]/30 flex items-center justify-center text-[#FF6B00] shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold font-['Outfit',sans-serif] text-white">
+                        AutoScout24 Advertentie Importeren
+                      </h3>
+                      <p className="text-xs text-zinc-400">
+                        Zet een AutoScout24 zoekertje in seconden om naar uw eigen voorraad met alle foto&apos;s, opties en prijs.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-gray-300">
-                    AutoScout24 Link of Gekopieerde Advertentiepagina / Tekst:
-                  </label>
+                {/* 3 Clear Input Methods */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-[11px] text-zinc-300">
+                  <div className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800">
+                    <span className="font-bold text-white block mb-0.5">1. Link plakken</span>
+                    <span className="text-zinc-400">Plak de advertentie-URL (.be, .nl, .de, .fr).</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800">
+                    <span className="font-bold text-[#FF6B00] block mb-0.5">2. Paginabron (Ctrl+U)</span>
+                    <span className="text-zinc-400">Open advertentie → Ctrl+U → Ctrl+A → plak hier. Werkt 100% altijd.</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800">
+                    <span className="font-bold text-white block mb-0.5">3. HTML-bestand (Ctrl+S)</span>
+                    <span className="text-zinc-400">Sla pagina op en sleep het .html bestand hieronder.</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
                   <textarea
-                    rows={5}
-                    placeholder="Plak hier de AutoScout24 URL (bv. https://www.autoscout24.be/nl/aanbod/...) of de gekopieerde paginabron / advertentietekst..."
+                    rows={4}
+                    placeholder="Plak hier een AutoScout24 URL (https://www.autoscout24.be/...) of de gekopieerde HTML paginabron (Ctrl+U)..."
                     value={autoscoutInput}
                     onChange={(e) => setAutoscoutInput(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-2xl p-4 text-xs text-white font-mono focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                    className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-3.5 text-xs text-white font-mono focus:ring-2 focus:ring-[#FF6B00] focus:outline-none placeholder:text-zinc-600"
                   />
-                </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-                  <span className="text-xs text-gray-500">
-                    Ondersteunt alle AutoScout24 formaten (.be, .nl, .de, .fr) en haalt automatisch alle afbeeldingen binnen.
-                  </span>
-                  <button
-                    onClick={handleAutoScoutParse}
-                    disabled={isLoadingImport}
-                    className="px-6 py-3 bg-[#FF6B00] hover:bg-orange-600 disabled:opacity-50 text-white font-bold uppercase tracking-wider text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    {isLoadingImport ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin text-white" />
-                        <span>Advertentie & Originele Foto's Ophalen...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        <span>Advertentie & Echte Foto's Ophalen</span>
-                      </>
-                    )}
-                  </button>
+                  {/* HTML File Drag & Drop + File Picker + Action Button */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    <label
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDraggingHtmlFile(true);
+                      }}
+                      onDragLeave={() => setIsDraggingHtmlFile(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDraggingHtmlFile(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) handleAutoScoutHtmlFile(file);
+                      }}
+                      className={`flex-1 flex items-center justify-center sm:justify-start gap-2.5 px-4 py-2.5 rounded-xl border border-dashed text-xs cursor-pointer transition-colors ${
+                        isDraggingHtmlFile
+                          ? 'border-[#FF6B00] bg-[#FF6B00]/10 text-white'
+                          : 'border-zinc-700 bg-zinc-950/60 hover:border-zinc-500 text-zinc-300'
+                      }`}
+                    >
+                      <FileCode className="w-4 h-4 text-[#FF6B00] shrink-0" />
+                      <span className="truncate">
+                        {uploadedHtmlName
+                          ? `Bestand geladen: ${uploadedHtmlName}`
+                          : 'Of sleep/kies opgeslagen .html bestand (Ctrl+S)'}
+                      </span>
+                      <input
+                        type="file"
+                        accept=".html,.htm,.txt"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAutoScoutHtmlFile(file);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => handleAutoScoutParse()}
+                      disabled={isLoadingImport}
+                      className="px-6 py-3 bg-[#FF6B00] hover:bg-orange-600 disabled:opacity-50 text-white font-bold uppercase tracking-wider text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                    >
+                      {isLoadingImport ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-white" />
+                          <span>Gegevens &amp; Foto&apos;s Ophalen...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          <span>Advertentie Uitlezen</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {importStatus && (
-                  <div className={`p-4 rounded-2xl border text-xs font-medium flex items-start gap-3 ${
-                    importStatus.startsWith('Fout') 
-                      ? 'bg-red-950/40 border-red-800/60 text-red-200' 
-                      : 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
-                  }`}>
-                    {importStatus.startsWith('Fout') ? (
-                      <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                    ) : (
+                  <div
+                    className={`p-4 rounded-xl border text-xs flex items-start gap-3 ${
+                      importStatus.type === 'error'
+                        ? 'bg-red-950/40 border-red-800/60 text-red-200'
+                        : importStatus.type === 'warning'
+                        ? 'bg-amber-950/40 border-amber-700/60 text-amber-100'
+                        : 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
+                    }`}
+                  >
+                    {importStatus.type === 'success' ? (
                       <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle
+                        className={`w-5 h-5 shrink-0 mt-0.5 ${
+                          importStatus.type === 'error' ? 'text-red-400' : 'text-amber-400'
+                        }`}
+                      />
                     )}
-                    <div>
-                      <p className="font-bold text-white">{importStatus}</p>
-                      <p className="text-[11px] text-gray-300 mt-1">
-                        Alle merk-, model-, km- en prijsgegevens zijn uitgelezen. Enkel de authentieke voertuigfoto's van de advertentie worden overgenomen (geen stockfoto's).
-                      </p>
+                    <div className="space-y-1">
+                      <p className="font-bold text-white">{importStatus.text}</p>
+                      {importStatus.detail && (
+                        <p className="text-[11px] text-zinc-300 leading-relaxed">{importStatus.detail}</p>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Interactive Imported Preview with Photo Sorting & Status */}
+              {/* Clean Editable Imported Preview */}
               {parsedPreviewCar && (
-                <div className="bg-zinc-900/90 p-6 rounded-3xl border-2 border-[#FF6B00] space-y-6 shadow-xl">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-zinc-800">
+                <div className="bg-zinc-900/90 p-5 sm:p-6 rounded-2xl border border-[#FF6B00]/60 space-y-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6B00] bg-[#FF6B00]/10 px-2.5 py-1 rounded-full border border-[#FF6B00]/30">
-                          Geïmporteerd Voertuig
-                        </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/20 px-2.5 py-1 rounded-full border border-emerald-500/30">
-                          Te Koop in Showroom
-                        </span>
-                      </div>
-
-                      <h4 className="text-xl font-black mt-2 font-['Outfit',sans-serif] text-white">
-                        {parsedPreviewCar.brand} {parsedPreviewCar.model} {parsedPreviewCar.edition}
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#FF6B00]">
+                        Import Voorbeeld · {parsedPreviewCar.images?.length || 0} foto&apos;s gevonden
+                      </span>
+                      <h4 className="text-xl font-extrabold mt-1 font-['Outfit',sans-serif] text-white">
+                        {parsedPreviewCar.brand || 'Merk'} {parsedPreviewCar.model || 'Model'}{' '}
+                        <span className="font-normal text-zinc-400 text-base">{parsedPreviewCar.edition}</span>
                       </h4>
-                      <p className="text-xs text-gray-300 mt-1">
-                        Bouwjaar {parsedPreviewCar.year} • {parsedPreviewCar.mileage?.toLocaleString('nl-BE')} km • {parsedPreviewCar.fuel} • {parsedPreviewCar.transmission} • {parsedPreviewCar.powerHp} PK • {formatCurrencyPrice(parsedPreviewCar.price || 0, 'EUR')} ({parsedPreviewCar.priceType || 'Marge'})
-                      </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <button
+                        type="button"
+                        onClick={() => {
+                          setParsedPreviewCar(null);
+                          setImportStatus(null);
+                          setUploadedHtmlName(null);
+                        }}
+                        className="px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs transition-colors cursor-pointer"
+                      >
+                        Wissen
+                      </button>
+                      <button
+                        type="button"
                         onClick={handleTransferPreviewToForm}
                         className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition-colors cursor-pointer"
                       >
-                        Bewerken in Volledig Formulier
+                        Volledig Formulier
                       </button>
                       <button
+                        type="button"
                         onClick={handlePublishAutoScoutDirect}
-                        className="px-6 py-2.5 rounded-xl bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase tracking-wider text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
+                        disabled={!parsedPreviewCar.brand?.trim() || !parsedPreviewCar.model?.trim()}
+                        className="px-5 py-2.5 rounded-xl bg-[#FF6B00] hover:bg-orange-600 disabled:opacity-40 text-white font-bold uppercase tracking-wider text-xs transition-colors cursor-pointer flex items-center gap-2"
                       >
                         <Check className="w-4 h-4" />
                         <span>Direct Publiceren</span>
@@ -1560,44 +1684,213 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Status Selection & Quick Data Verification */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-zinc-950/80 rounded-2xl border border-zinc-800 text-xs">
+                  {/* Complete Editable Specs Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
                     <div>
-                      <label className="block font-bold text-gray-300 mb-1">Status van de wagen</label>
-                      <select
-                        value={parsedPreviewCar.status || 'available'}
-                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, status: e.target.value as any })}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-white font-bold"
-                      >
-                        <option value="available">Te Koop (Direct in showroom)</option>
-                        <option value="reserved">Gereserveerd</option>
-                      </select>
+                      <label className="block font-semibold text-zinc-400 mb-1">Merk *</label>
+                      <input
+                        type="text"
+                        value={parsedPreviewCar.brand || ''}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, brand: e.target.value })}
+                        placeholder="bv. BMW"
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white font-semibold"
+                      />
                     </div>
-
                     <div>
-                      <label className="block font-bold text-gray-300 mb-1">Vraagprijs (€)</label>
+                      <label className="block font-semibold text-zinc-400 mb-1">Model *</label>
+                      <input
+                        type="text"
+                        value={parsedPreviewCar.model || ''}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, model: e.target.value })}
+                        placeholder="bv. X5 xDrive45e"
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-zinc-400 mb-1">Uitvoering</label>
+                      <input
+                        type="text"
+                        value={parsedPreviewCar.edition || ''}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, edition: e.target.value })}
+                        placeholder="bv. M-Sport"
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-zinc-400 mb-1">Vraagprijs (€)</label>
                       <input
                         type="number"
                         value={parsedPreviewCar.price || ''}
                         onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, price: Number(e.target.value) })}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-white font-bold"
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-[#FF6B00] font-bold tabular-nums"
                       />
                     </div>
 
                     <div>
-                      <label className="block font-bold text-gray-300 mb-1">Kilometerstand (km)</label>
+                      <label className="block font-semibold text-zinc-400 mb-1">Bouwjaar</label>
+                      <input
+                        type="number"
+                        value={parsedPreviewCar.year || ''}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, year: Number(e.target.value) })}
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white tabular-nums"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-zinc-400 mb-1">Kilometerstand (km)</label>
                       <input
                         type="number"
                         value={parsedPreviewCar.mileage || ''}
                         onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, mileage: Number(e.target.value) })}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-white"
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white tabular-nums"
                       />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-zinc-400 mb-1">Brandstof</label>
+                      <select
+                        value={parsedPreviewCar.fuel || 'Benzine'}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, fuel: e.target.value as FuelType })}
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white"
+                      >
+                        <option value="Benzine">Benzine</option>
+                        <option value="Diesel">Diesel</option>
+                        <option value="Plug-in Hybride">Plug-in Hybride</option>
+                        <option value="Mild Hybride">Mild Hybride</option>
+                        <option value="Elektrisch">Elektrisch</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-zinc-400 mb-1">Transmissie</label>
+                      <select
+                        value={parsedPreviewCar.transmission || 'Automaat'}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, transmission: e.target.value as TransmissionType })}
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white"
+                      >
+                        <option value="Automaat">Automaat</option>
+                        <option value="Manueel">Manueel</option>
+                      </select>
                     </div>
 
                     <div>
-                      <label className="block font-bold text-gray-300 mb-1">Brandstof & Versnelling</label>
-                      <div className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-gray-200">
-                        {parsedPreviewCar.fuel || 'Benzine'} • {parsedPreviewCar.transmission || 'Automaat'}
+                      <label className="block font-semibold text-zinc-400 mb-1">Vermogen (PK)</label>
+                      <input
+                        type="number"
+                        value={parsedPreviewCar.powerHp || ''}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, powerHp: Number(e.target.value) })}
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white tabular-nums"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-zinc-400 mb-1">Prijsregeling</label>
+                      <select
+                        value={parsedPreviewCar.priceType || 'Marge'}
+                        onChange={(e) =>
+                          setParsedPreviewCar({
+                            ...parsedPreviewCar,
+                            priceType: e.target.value as any,
+                            vatDeductible: e.target.value === 'BTW Aftrekbaar',
+                          })
+                        }
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white"
+                      >
+                        <option value="BTW Aftrekbaar">BTW Aftrekbaar</option>
+                        <option value="Marge">Marge</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-zinc-400 mb-1">Kleur Exterieur</label>
+                      <input
+                        type="text"
+                        value={parsedPreviewCar.color || ''}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, color: e.target.value })}
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-zinc-400 mb-1">Status</label>
+                      <select
+                        value={parsedPreviewCar.status || 'available'}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, status: e.target.value as any })}
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white font-semibold"
+                      >
+                        <option value="available">Te Koop (Showroom)</option>
+                        <option value="reserved">Gereserveerd</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Description & Options Preview */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="block font-semibold text-zinc-400 mb-1.5">Beschrijving</label>
+                      <textarea
+                        rows={4}
+                        value={parsedPreviewCar.description || ''}
+                        onChange={(e) => setParsedPreviewCar({ ...parsedPreviewCar, description: e.target.value })}
+                        placeholder="Geen beschrijving gevonden — vul eventueel aan..."
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-3 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block font-semibold text-zinc-400">
+                        Herkende Opties ({parsedPreviewCar.options?.length || 0})
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newPreviewOption}
+                          onChange={(e) => setNewPreviewOption(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newPreviewOption.trim()) {
+                                setParsedPreviewCar({
+                                  ...parsedPreviewCar,
+                                  options: [...(parsedPreviewCar.options || []), newPreviewOption.trim()],
+                                });
+                                setNewPreviewOption('');
+                              }
+                            }
+                          }}
+                          placeholder="Optie toevoegen..."
+                          className="flex-1 bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newPreviewOption.trim()) {
+                              setParsedPreviewCar({
+                                ...parsedPreviewCar,
+                                options: [...(parsedPreviewCar.options || []), newPreviewOption.trim()],
+                              });
+                              setNewPreviewOption('');
+                            }
+                          }}
+                          className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pt-1">
+                        {(parsedPreviewCar.options || []).map((opt, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-200 text-[11px] border border-zinc-700"
+                          >
+                            <span>{opt}</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setParsedPreviewCar({
+                                  ...parsedPreviewCar,
+                                  options: (parsedPreviewCar.options || []).filter((_, i) => i !== idx),
+                                })
+                              }
+                              className="text-zinc-400 hover:text-red-400 cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -1608,108 +1901,109 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                       <div>
                         <h5 className="font-bold text-sm text-white flex items-center gap-2">
                           <Camera className="w-4 h-4 text-[#FF6B00]" />
-                          <span>Echte Foto's van de Advertentie ({parsedPreviewCar.images?.length || 0})</span>
+                          <span>Advertentiefoto&apos;s ({parsedPreviewCar.images?.length || 0})</span>
                         </h5>
-                        <p className="text-[11px] text-gray-400">
-                          <strong>Versleep foto's (drag-and-drop)</strong> om de volgorde direct aan te passen. Foto #1 is automatisch de <strong>Hoofdfoto</strong>.
+                        <p className="text-[11px] text-zinc-400">
+                          Versleep foto&apos;s om de volgorde te wijzigen. Foto #1 wordt de hoofdfoto.
                         </p>
                       </div>
-
-                      <span className="text-[11px] text-emerald-400 font-semibold bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-800/50 flex items-center gap-1.5 self-start sm:self-auto">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Enkel originele advertentiefoto's</span>
-                      </span>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                      {(parsedPreviewCar.images || []).map((img, idx) => (
-                        <div
-                          key={idx}
-                          draggable
-                          onDragStart={(e) => handlePreviewDragStart(e, idx)}
-                          onDragOver={(e) => handlePreviewDragOver(e, idx)}
-                          onDrop={(e) => handlePreviewDrop(e, idx)}
-                          onDragEnd={handlePreviewDragEnd}
-                          className={`relative rounded-2xl overflow-hidden group bg-black border-2 transition-all cursor-grab active:cursor-grabbing select-none ${
-                            dragOverPreviewIdx === idx
-                              ? 'border-[#FF6B00] ring-4 ring-[#FF6B00]/40 scale-102 z-20 shadow-2xl'
-                              : draggedPreviewIdx === idx
-                              ? 'opacity-30 border-dashed border-gray-500'
-                              : idx === 0
-                              ? 'border-[#FF6B00] shadow-md ring-2 ring-[#FF6B00]/20'
-                              : 'border-zinc-800 hover:border-zinc-600'
-                          }`}
-                          title="Versleep deze foto naar een andere positie"
-                        >
-                          <div className="aspect-[4/3] w-full relative">
-                            <img src={img} alt="" className="w-full h-full object-cover pointer-events-none" />
-                          </div>
-
-                          {/* Top Badge: Number / Main + Drag Grip Icon */}
-                          <div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1">
-                            <div className="p-1 rounded-md bg-black/80 text-white/90 shadow-xs flex items-center justify-center">
-                              <GripVertical className="w-3 h-3" />
+                    {parsedPreviewCar.images && parsedPreviewCar.images.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        {parsedPreviewCar.images.map((img, idx) => (
+                          <div
+                            key={idx}
+                            draggable
+                            onDragStart={(e) => handlePreviewDragStart(e, idx)}
+                            onDragOver={(e) => handlePreviewDragOver(e, idx)}
+                            onDrop={(e) => handlePreviewDrop(e, idx)}
+                            onDragEnd={handlePreviewDragEnd}
+                            className={`relative rounded-xl overflow-hidden group bg-black border-2 transition-all cursor-grab active:cursor-grabbing select-none ${
+                              dragOverPreviewIdx === idx
+                                ? 'border-[#FF6B00] ring-2 ring-[#FF6B00]/40 z-20'
+                                : draggedPreviewIdx === idx
+                                ? 'opacity-30 border-dashed border-zinc-500'
+                                : idx === 0
+                                ? 'border-[#FF6B00]'
+                                : 'border-zinc-800 hover:border-zinc-600'
+                            }`}
+                          >
+                            <div className="aspect-[4/3] w-full relative">
+                              <img
+                                src={img}
+                                alt=""
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src = '/logo2.png';
+                                }}
+                                className="w-full h-full object-cover pointer-events-none"
+                              />
                             </div>
-                            {idx === 0 ? (
-                              <span className="px-2 py-0.5 rounded-md bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                                <Star className="w-2.5 h-2.5 fill-white" />
-                                Hoofd
-                              </span>
-                            ) : (
-                              <span className="px-1.5 py-0.5 rounded-md bg-black/70 text-gray-300 text-[10px] font-bold">
-                                #{idx + 1}
-                              </span>
-                            )}
-                          </div>
 
-                          {/* Delete Button */}
-                          <div className="absolute top-1.5 right-1.5 z-10">
-                            <button
-                              type="button"
-                              onClick={() => handlePreviewRemoveImage(idx)}
-                              title="Foto verwijderen"
-                              className="p-1.5 rounded-full bg-red-600/90 hover:bg-red-600 text-white transition-opacity cursor-pointer shadow-sm"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
+                            <div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1">
+                              <div className="p-1 rounded bg-black/80 text-white/90">
+                                <GripVertical className="w-3 h-3" />
+                              </div>
+                              {idx === 0 ? (
+                                <span className="px-1.5 py-0.5 rounded bg-[#FF6B00] text-white text-[9px] font-bold uppercase flex items-center gap-1">
+                                  <Star className="w-2.5 h-2.5 fill-white" />
+                                  Hoofd
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.5 rounded bg-black/75 text-zinc-300 text-[10px] font-bold tabular-nums">
+                                  #{idx + 1}
+                                </span>
+                              )}
+                            </div>
 
-                          {/* Action Toolbar on Bottom */}
-                          <div className="p-1.5 bg-zinc-950/90 flex items-center justify-between gap-1 text-gray-300 border-t border-zinc-800">
-                            <button
-                              type="button"
-                              onClick={() => handlePreviewMoveImage(idx, 'left')}
-                              disabled={idx === 0}
-                              title="Verplaats naar links"
-                              className="p-1 rounded hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
-                            >
-                              <ChevronLeft className="w-3.5 h-3.5" />
-                            </button>
-
-                            {idx !== 0 && (
+                            <div className="absolute top-1.5 right-1.5 z-10">
                               <button
                                 type="button"
-                                onClick={() => handlePreviewSetMainImage(idx)}
-                                title="Maak dit de hoofdfoto"
-                                className="px-1.5 py-0.5 rounded text-[9px] font-bold text-amber-400 hover:bg-amber-400/20 cursor-pointer"
+                                onClick={() => handlePreviewRemoveImage(idx)}
+                                title="Foto verwijderen"
+                                className="p-1 rounded-full bg-red-600/90 hover:bg-red-600 text-white cursor-pointer"
                               >
-                                Kies als Hoofd
+                                <X className="w-3 h-3" />
                               </button>
-                            )}
+                            </div>
 
-                            <button
-                              type="button"
-                              onClick={() => handlePreviewMoveImage(idx, 'right')}
-                              disabled={idx === (parsedPreviewCar.images?.length || 0) - 1}
-                              title="Verplaats naar rechts"
-                              className="p-1 rounded hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
-                            >
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="p-1.5 bg-zinc-950/90 flex items-center justify-between gap-1 text-zinc-300 border-t border-zinc-800">
+                              <button
+                                type="button"
+                                onClick={() => handlePreviewMoveImage(idx, 'left')}
+                                disabled={idx === 0}
+                                className="p-1 rounded hover:bg-zinc-800 disabled:opacity-20 cursor-pointer"
+                              >
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                              </button>
+
+                              {idx !== 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePreviewSetMainImage(idx)}
+                                  className="px-1.5 py-0.5 rounded text-[9px] font-bold text-amber-400 hover:bg-amber-400/20 cursor-pointer"
+                                >
+                                  Hoofdfoto
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => handlePreviewMoveImage(idx, 'right')}
+                                disabled={idx === (parsedPreviewCar.images?.length || 0) - 1}
+                                className="p-1 rounded hover:bg-zinc-800 disabled:opacity-20 cursor-pointer"
+                              >
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-6 text-center rounded-xl border border-dashed border-zinc-700 text-xs text-zinc-400">
+                        Geen foto&apos;s gevonden via de URL. Plak de paginabron (Ctrl+U) of klik op &quot;Volledig Formulier&quot; om eigen foto&apos;s te uploaden.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1784,7 +2078,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                           <span
                             className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                               lead.status === 'new'
-                                ? 'bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30 animate-pulse'
+                                ? 'bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30'
                                 : lead.status === 'contacted'
                                 ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
                                 : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
@@ -1936,7 +2230,7 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                 <div className="flex flex-col sm:flex-row items-start gap-4">
                   <div className="w-full sm:w-48 aspect-[16/10] rounded-2xl overflow-hidden bg-black border border-zinc-700 shrink-0">
                     <img
-                      src={settingsForm.showroomImageUrl || '/hero-showroom.jpg'}
+                      src={settingsForm.showroomImageUrl || '/assets/aistudio/unnamed_6b5d4ee5.jpg'}
                       alt="Showroom Preview"
                       className="w-full h-full object-cover"
                     />
@@ -1948,15 +2242,15 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                         Showroom Foto URL
                       </label>
                       <input
-                        type="url"
-                        placeholder="https://... of /hero-showroom.jpg"
+                        type="text"
+                        placeholder="https://... of /assets/aistudio/unnamed_6b5d4ee5.jpg"
                         value={settingsForm.showroomImageUrl || ''}
                         onChange={(e) => setSettingsForm({ ...settingsForm, showroomImageUrl: e.target.value })}
                         className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-white font-mono"
                       />
                     </div>
 
-                    <div>
+                    <div className="flex flex-wrap items-center gap-2">
                       <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-gray-200 font-bold text-xs cursor-pointer border border-zinc-700 transition-colors">
                         <Upload className="w-3.5 h-3.5 text-[#FF6B00]" />
                         <span>Kies een nieuwe foto vanaf computer</span>
@@ -1967,6 +2261,22 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                           className="hidden"
                         />
                       </label>
+
+                      {settingsForm.showroomImageUrl !== '/assets/aistudio/unnamed_6b5d4ee5.jpg' && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              showroomImageUrl: '/assets/aistudio/unnamed_6b5d4ee5.jpg',
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-semibold text-xs border border-zinc-700 cursor-pointer transition-colors"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-[#FF6B00]" />
+                          <span>Standaardfoto herstellen</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2096,11 +2406,33 @@ export const DealerDashboardModal: React.FC<DealerDashboardModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-bold text-gray-300 mb-1">Stad & Postcode</label>
+                    <label className="block font-bold text-gray-300 mb-1">Stad / Gemeente</label>
                     <input
                       type="text"
                       value={settingsForm.city || ''}
                       onChange={(e) => setSettingsForm({ ...settingsForm, city: e.target.value })}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-gray-300 mb-1">Postcode</label>
+                    <input
+                      type="text"
+                      value={settingsForm.zipCode || ''}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, zipCode: e.target.value })}
+                      placeholder="2660"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-gray-300 mb-1">Google Maps Link</label>
+                    <input
+                      type="url"
+                      value={settingsForm.googleMapsUrl || ''}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, googleMapsUrl: e.target.value })}
+                      placeholder="https://maps.google.com/..."
                       className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white"
                     />
                   </div>

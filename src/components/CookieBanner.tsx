@@ -43,7 +43,7 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({ language }) => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-[#1A1A1A] text-white p-5 rounded-3xl shadow-2xl border border-zinc-800 animate-in fade-in slide-in-from-bottom-5 duration-300">
+    <div className="fixed bottom-16 md:bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-[#1A1A1A] text-white p-5 rounded-3xl shadow-2xl border border-zinc-800 animate-in fade-in slide-in-from-bottom-5 duration-300">
       <div className="flex items-start gap-3.5">
         <div className="p-2 rounded-2xl bg-[#FF6B00]/10 text-[#FF6B00] shrink-0 mt-0.5">
           <ShieldCheck className="w-5 h-5" />

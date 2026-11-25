@@ -1,5 +1,7 @@
 import { CustomerReview } from '../types';
 
+export const DEFAULT_SHOWROOM_IMAGE = '/assets/aistudio/unnamed_6b5d4ee5.jpg';
+
 export const DEALERSHIP_INFO = {
   name: 'Auto Sale',
   legalName: 'Auto Sale NV',
@@ -39,7 +41,7 @@ export const DEALERSHIP_INFO = {
     { label: 'Jaren Ervaring', value: '25+', subtext: 'Opgericht in 1999' },
     { label: 'Tevreden Klanten', value: '3.500+', subtext: 'Particulier & zakelijk' },
     { label: 'Inspectiepunten', value: '113', subtext: 'Traxio gecertificeerd' },
-    { label: 'Google Rating', value: '4.7 ★', subtext: 'Uitstekende reputatie' }
+    { label: 'Google Rating', value: '4.9 ★', subtext: '280+ reviews' }
   ],
   guarantees: [
     {

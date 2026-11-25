@@ -1,17 +1,6 @@
-import React from 'react';
-import { 
-  ShieldCheck, 
-  Award, 
-  FileCheck, 
-  CheckCircle2, 
-  Globe, 
-  Quote,
-  Clock,
-  Sparkles,
-  CarFront,
-  ArrowRight
-} from 'lucide-react';
-import { DEALERSHIP_INFO } from '../data/dealership';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, CheckCircle2, Quote, ArrowRight } from 'lucide-react';
+import { DEALERSHIP_INFO, DEFAULT_SHOWROOM_IMAGE } from '../data/dealership';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../i18n/translations';
 
@@ -26,171 +15,122 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
   onExploreStock,
   onOpenValuation,
   showroomImageUrl,
-  language = 'nl'
+  language = 'nl',
 }) => {
-  const currentShowroomPhoto = showroomImageUrl || '/hero-showroom.jpg';
+  const currentShowroomPhoto = showroomImageUrl || DEFAULT_SHOWROOM_IMAGE;
+  const [imgFailed, setImgFailed] = useState(false);
   const t = TRANSLATIONS[language]?.about || TRANSLATIONS.nl.about;
-  const tNav = TRANSLATIONS[language]?.nav || TRANSLATIONS.nl.nav;
+
+  useEffect(() => {
+    setImgFailed(false);
+  }, [currentShowroomPhoto]);
 
   return (
-    <div id="about-container">
-      {/* 1. Traxio Kwaliteitsgarantie Highlight Banner - Bento Box */}
-      <section id="garantie" className="py-8 sm:py-14 bg-white border-b border-zinc-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-[#141416] rounded-3xl p-5 sm:p-12 text-white relative overflow-hidden shadow-xl border border-zinc-800">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center relative z-10">
-              <div className="lg:col-span-7 space-y-3 sm:space-y-4">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF6B00] text-white text-[11px] sm:text-xs font-bold uppercase tracking-widest shadow-sm">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>{t.badge}</span>
-                </div>
-
-                <h3 className="text-2xl sm:text-4xl font-black font-['Outfit',sans-serif] tracking-tight leading-tight">
-                  {t.title}
-                </h3>
-
-                <p className="text-gray-300 text-xs sm:text-base leading-relaxed">
-                  {t.description}
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pt-1 sm:pt-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-                    <span>{t.bullet1}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-                    <span>{t.bullet2}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-                    <span>{t.bullet3}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-                    <span>{t.bullet4}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 flex flex-col items-center justify-center p-5 sm:p-8 bg-black/60 rounded-3xl border border-zinc-800 text-center space-y-2 sm:space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 p-1 flex items-center justify-center shadow-lg shrink-0">
-                    <img src="/logo2.png" alt="Auto Sale" className="w-full h-full object-contain" />
-                  </div>
-                  <div className="px-3 py-1.5 rounded-xl bg-[#FF6B00] text-white font-black text-xs uppercase tracking-wider shadow-md">
-                    TRAXIO
-                  </div>
-                </div>
-                <div className="text-lg sm:text-xl font-black font-['Outfit',sans-serif] text-white">
-                  {t.badge}
-                </div>
-                <p className="text-xs text-gray-400 max-w-xs leading-relaxed">
-                  {t.description}
-                </p>
-                <div className="text-[10px] font-bold text-gray-400 pt-1 uppercase tracking-wider">
-                  KBO: {DEALERSHIP_INFO.vatNumber}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. About Auto Sale History & Philosophy */}
-      <section id="over-ons" className="py-8 sm:py-16 bg-[#F8F9FA]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center">
-            {/* Left: Images & Heritage Badge (5 cols) */}
-            <div className="lg:col-span-5 relative">
-              <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100 shadow-xl border border-zinc-200/90 relative">
+    <section id="over-ons" className="py-10 sm:py-16 lg:py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-14">
+        {/* Main Editorial Split */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-center">
+          <div className="lg:col-span-6">
+            <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-200 relative">
+              {!imgFailed ? (
                 <img
                   src={currentShowroomPhoto}
                   alt="Auto Sale Showroom Antwerpen"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80';
-                  }}
-                  className="w-full h-full object-cover"
+                  onError={() => setImgFailed(true)}
+                  className="w-full h-full object-cover object-center"
+                  referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 text-white flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] font-black text-[#FF6B00] uppercase tracking-widest">
-                      {DEALERSHIP_INFO.address.street}, {DEALERSHIP_INFO.address.city}
-                    </div>
-                    <div className="text-base sm:text-lg font-black font-['Outfit',sans-serif]">
-                      Auto Sale • Drive Your Dream
-                    </div>
-                  </div>
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-1 flex items-center justify-center shrink-0">
-                    <img src="/logo2.png" alt="Auto Sale" className="w-full h-full object-contain" />
-                  </div>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-900 to-zinc-800 text-white font-['Outfit',sans-serif] text-2xl font-bold">
+                  Auto Sale Antwerpen
                 </div>
-              </div>
-
-              {/* Floating Experience Badge */}
-              <div className="absolute -bottom-3 -right-2 sm:-bottom-5 sm:right-4 bg-[#FF6B00] text-white p-3 sm:p-5 rounded-2xl sm:rounded-3xl shadow-xl flex items-center gap-2.5 sm:gap-3">
-                <div className="text-2xl sm:text-4xl font-black font-['Outfit',sans-serif]">
-                  25+
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute bottom-3.5 left-3.5 right-3.5 sm:bottom-4 sm:left-4 sm:right-4 text-white">
+                <div className="text-[11px] sm:text-xs font-semibold text-[#FF6B00]">
+                  {DEALERSHIP_INFO.address.street}, {DEALERSHIP_INFO.address.city}
                 </div>
-                <div className="text-[10px] sm:text-xs font-black leading-tight uppercase tracking-wider">
-                  {t.historyTitle}
+                <div className="text-sm sm:text-base font-bold font-['Outfit',sans-serif]">
+                  {DEALERSHIP_INFO.legalName} · KBO {DEALERSHIP_INFO.vatNumber}
                 </div>
-              </div>
-            </div>
-
-            {/* Right: Story & Michel Primack Quote (7 cols) */}
-            <div className="lg:col-span-7 space-y-4 sm:space-y-5">
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-zinc-200 text-[#1A1A1A] text-[11px] sm:text-xs font-bold uppercase tracking-widest shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
-                <span>{tNav.about}</span>
-              </div>
-
-              <h2 className="text-2xl sm:text-5xl font-black text-[#1A1A1A] font-['Outfit',sans-serif] tracking-tighter leading-tight">
-                {t.historyTitle}
-              </h2>
-
-              <p className="text-gray-600 text-xs sm:text-base leading-relaxed">
-                {t.historyText}
-              </p>
-
-              {/* Founder quote box */}
-              <div className="p-6 rounded-3xl bg-[#F8F8F8] border border-gray-200">
-                <div className="flex gap-4 items-start">
-                  <Quote className="w-8 h-8 text-[#FF6B00] shrink-0 opacity-80" />
-                  <div>
-                    <blockquote className="italic text-[#1A1A1A] text-sm font-semibold leading-relaxed">
-                      {t.quote}
-                    </blockquote>
-                    <div className="mt-3 text-xs font-bold text-[#1A1A1A]">
-                      Michel Primack <span className="text-gray-500 font-normal">— Auto Sale NV</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex flex-wrap gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={onExploreStock}
-                  className="inline-flex items-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-3.5 px-6 rounded-2xl transition-all cursor-pointer shadow-md"
-                >
-                  <span>{t.exploreBtn}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={onOpenValuation}
-                  className="inline-flex items-center gap-2 bg-white hover:bg-gray-100 text-[#1A1A1A] font-bold uppercase text-xs tracking-wider py-3.5 px-6 rounded-2xl border border-gray-200 transition-all cursor-pointer shadow-xs"
-                >
-                  <span>{t.valuationBtn}</span>
-                </button>
               </div>
             </div>
           </div>
+
+          <div className="lg:col-span-6 space-y-4 sm:space-y-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#FF6B00]">
+              {t.badge}
+            </p>
+
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-zinc-950 font-['Outfit',sans-serif] tracking-tight leading-tight text-balance">
+              {t.historyTitle}
+            </h2>
+
+            <p className="text-zinc-600 text-sm sm:text-base leading-relaxed">
+              {t.historyText}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-xs font-semibold text-zinc-800">
+              {[t.bullet1, t.bullet2, t.bullet3, t.bullet4].map((bullet, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#FF6B00] shrink-0" />
+                  <span>{bullet}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-2xl bg-zinc-50 border border-zinc-200 flex gap-3 sm:gap-3.5 items-start">
+              <Quote className="w-5 h-5 sm:w-6 sm:h-6 text-[#FF6B00] shrink-0" />
+              <div>
+                <blockquote className="italic text-zinc-900 text-sm font-semibold leading-relaxed">
+                  {t.quote}
+                </blockquote>
+                <div className="mt-2 text-xs text-zinc-500">
+                  <strong className="text-zinc-900">{DEALERSHIP_INFO.owner}</strong> · {DEALERSHIP_INFO.legalName}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2.5 sm:gap-3 pt-1">
+              <button
+                type="button"
+                onClick={onExploreStock}
+                className="w-full sm:w-auto min-h-[46px] inline-flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-xl transition-colors cursor-pointer"
+              >
+                <span>{t.exploreBtn}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onOpenValuation}
+                className="w-full sm:w-auto min-h-[46px] inline-flex items-center justify-center gap-2 bg-white hover:bg-zinc-50 text-zinc-900 font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-xl border border-zinc-200 transition-colors cursor-pointer"
+              >
+                <span>{t.valuationBtn}</span>
+              </button>
+            </div>
+          </div>
         </div>
-      </section>
-    </div>
+
+        {/* Clean Traxio Warranty Strip */}
+        <div id="garantie" className="bg-[#141416] text-white rounded-2xl p-5 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
+          <div className="flex items-start gap-3.5 sm:gap-4 max-w-2xl">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#FF6B00]/15 text-[#FF6B00] flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-lg font-bold font-['Outfit',sans-serif] text-white">
+                {t.title}
+              </h3>
+              <p className="text-xs sm:text-sm text-zinc-300 mt-1 leading-relaxed">
+                {t.description}
+              </p>
+            </div>
+          </div>
+          <div className="text-xs text-zinc-400 shrink-0 font-medium">
+            Erkend Traxio-lid · Car-Pass Partner
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };

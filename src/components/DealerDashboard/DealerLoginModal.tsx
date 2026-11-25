@@ -84,7 +84,7 @@ export const DealerLoginModal: React.FC<DealerLoginModalProps> = ({
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="bv. admin"
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+              className="w-full min-h-[44px] bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-base sm:text-sm text-white focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
             />
           </div>
 
@@ -99,14 +99,14 @@ export const DealerLoginModal: React.FC<DealerLoginModalProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-[#FF6B00] focus:outline-none tracking-wider"
+              className="w-full min-h-[44px] bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-base sm:text-sm text-white focus:ring-2 focus:ring-[#FF6B00] focus:outline-none tracking-wider"
             />
           </div>
 
           <div className="pt-3">
             <button
               type="submit"
-              className="w-full py-3.5 px-4 rounded-2xl bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase tracking-wider text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full min-h-[46px] py-3.5 px-4 rounded-2xl bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase tracking-wider text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <UserCheck className="w-4 h-4" />
               <span>Inloggen op Dashboard</span>
@@ -117,9 +117,9 @@ export const DealerLoginModal: React.FC<DealerLoginModalProps> = ({
         <div className="mt-6 pt-4 border-t border-zinc-800/80 text-[11px] text-gray-500 flex items-center justify-between">
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            256-bit SSL Versleuteling
+            Beveiligde verbinding
           </span>
-          <span className="text-gray-400 font-mono">Auto Sale v3.2</span>
+          <span className="text-gray-400">Directie &amp; Beheer</span>
         </div>
       </div>
     </div>

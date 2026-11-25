@@ -1,6 +1,6 @@
 export type FuelType = 'Benzine' | 'Diesel' | 'Plug-in Hybride' | 'Elektrisch' | 'Mild Hybride';
 export type TransmissionType = 'Automaat' | 'Manueel';
-export type BodyType = 'SUV / 4x4' | 'Berline' | 'Coupé' | 'Break' | 'Camper';
+export type BodyType = 'SUV / 4x4' | 'Berline' | 'Coupé' | 'Break' | 'Cabriolet' | 'Sportwagen' | 'Camper';
 export type Category = 'premium' | 'hybrid-electric' | 'export-handelaar' | 'all';
 export type Language = 'nl' | 'en' | 'fr' | 'de' | 'es' | 'it' | 'pl';
 export type Currency = 'EUR' | 'GBP' | 'CHF' | 'USD';

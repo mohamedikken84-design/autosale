@@ -1,18 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   CarFront, 
-  Calendar, 
-  Clock, 
   CheckCircle2, 
-  ShieldCheck, 
-  User, 
-  Phone, 
-  Mail,
   Send
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Car, TestDriveBooking, Language } from '../types';
+import { Car, TestDriveBooking, Language, DealershipSettings } from '../types';
 import { DEALERSHIP_INFO } from '../data/dealership';
 import { TRANSLATIONS } from '../i18n/translations';
 
@@ -23,6 +17,7 @@ interface TestDriveModalProps {
   allCars: Car[];
   onBookingSuccess?: (booking: TestDriveBooking) => void;
   language?: Language;
+  dealershipSettings?: DealershipSettings;
 }
 
 export const TestDriveModal: React.FC<TestDriveModalProps> = ({
@@ -31,13 +26,16 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
   selectedCar,
   allCars,
   onBookingSuccess,
-  language = 'nl'
+  language = 'nl',
+  dealershipSettings,
 }) => {
   const t = TRANSLATIONS[language]?.testDrive || TRANSLATIONS.nl.testDrive;
-  const [activeCarId, setActiveCarId] = useState<string>(selectedCar ? selectedCar.id : (allCars[0]?.id || ''));
+  const availableCars = allCars.filter((c) => !c.deletedAt && c.status !== 'sold');
+  const [activeCarId, setActiveCarId] = useState<string>(selectedCar ? selectedCar.id : (availableCars[0]?.id || ''));
+  const [customModel, setCustomModel] = useState('');
   const [formData, setFormData] = useState<TestDriveBooking>({
     carId: selectedCar ? selectedCar.id : '',
-    carTitle: selectedCar ? `${selectedCar.brand} ${selectedCar.model}` : '',
+    carTitle: selectedCar ? `${selectedCar.brand} ${selectedCar.model}` : 'Algemene showroomafspraak',
     date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
     timeSlot: '14:00',
     fullName: '',
@@ -48,54 +46,80 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
   });
   const [isBooked, setIsBooked] = useState(false);
 
-  // Update active car if prop changes
-  React.useEffect(() => {
-    if (selectedCar) {
-      setActiveCarId(selectedCar.id);
+  // Sync active car & reset booking confirmation whenever modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsBooked(false);
+      return;
+    }
+    const targetCar = selectedCar || availableCars[0] || null;
+    if (targetCar) {
+      setActiveCarId(targetCar.id);
       setFormData((prev) => ({
         ...prev,
-        carId: selectedCar.id,
-        carTitle: `${selectedCar.brand} ${selectedCar.model}`
+        carId: targetCar.id,
+        carTitle: `${targetCar.brand} ${targetCar.model}`,
+      }));
+    } else {
+      setActiveCarId('');
+      setFormData((prev) => ({
+        ...prev,
+        carId: '',
+        carTitle: customModel.trim() || 'Showroom bezoek / proefrit',
       }));
     }
-  }, [selectedCar]);
+  }, [isOpen, selectedCar?.id]);
 
   if (!isOpen) return null;
 
-  const currentCar = allCars.find((c) => c.id === activeCarId) || selectedCar;
+  const currentCar = availableCars.find((c) => c.id === activeCarId) || selectedCar;
+  const shopName = dealershipSettings?.name || DEALERSHIP_INFO.name;
+  const shopAddress = dealershipSettings?.address
+    ? `${dealershipSettings.address}, ${dealershipSettings.zipCode || '2660'} ${dealershipSettings.city || 'Hoboken (Antwerpen)'}`
+    : DEALERSHIP_INFO.address.full;
+  const shopPhone = dealershipSettings?.phone || DEALERSHIP_INFO.contact.phone;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const finalBooking: TestDriveBooking = {
+      ...formData,
+      carTitle: currentCar
+        ? `${currentCar.brand} ${currentCar.model}`
+        : customModel.trim() || 'Algemene proefrit / showroombezoek',
+    };
     setIsBooked(true);
     confetti({
-      particleCount: 75,
-      spread: 60,
+      particleCount: 65,
+      spread: 55,
       origin: { y: 0.6 }
     });
     if (onBookingSuccess) {
-      onBookingSuccess(formData);
+      onBookingSuccess(finalBooking);
     }
   };
 
   const timeSlots = ['10:30', '11:45', '14:00', '15:15', '16:30', '17:45'];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
       <div 
-        className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[95vh] flex flex-col border border-zinc-200"
+        className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[95vh] flex flex-col border border-zinc-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-5 bg-[#1A1A1A] text-white">
+        <div className="flex items-center justify-between px-6 py-4 bg-[#141416] text-white">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#FF6B00] flex items-center justify-center text-white shadow-md">
+            <div className="w-9 h-9 rounded-xl bg-[#FF6B00] flex items-center justify-center text-white">
               <CarFront className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black font-['Outfit',sans-serif]">
+              <h3 className="text-base font-bold font-['Outfit',sans-serif]">
                 {t.title}
               </h3>
-              <p className="text-[11px] text-gray-400 font-medium">
+              <p className="text-[11px] text-zinc-400">
                 {t.subtitle}
               </p>
             </div>
@@ -103,58 +127,71 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-2xl text-gray-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="overflow-y-auto p-6 space-y-6">
+        <div className="overflow-y-auto p-6 space-y-5">
           {!isBooked ? (
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Selected Car Preview / Switcher */}
               <div>
-                <label className="block text-xs font-black text-[#1A1A1A] uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-zinc-900 uppercase tracking-wider mb-2">
                   {t.selectCar}
                 </label>
-                <select
-                  value={activeCarId}
-                  onChange={(e) => {
-                    const id = e.target.value;
-                    setActiveCarId(id);
-                    const car = allCars.find((c) => c.id === id);
-                    if (car) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        carId: car.id,
-                        carTitle: `${car.brand} ${car.model}`
-                      }));
-                    }
-                  }}
-                  className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-[#1A1A1A] focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
-                >
-                  {allCars.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.brand} {c.model} ({c.year} - €{c.price.toLocaleString('nl-BE')})
-                    </option>
-                  ))}
-                </select>
+                {availableCars.length > 0 ? (
+                  <select
+                    value={activeCarId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setActiveCarId(id);
+                      const car = availableCars.find((c) => c.id === id);
+                      if (car) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          carId: car.id,
+                          carTitle: `${car.brand} ${car.model}`
+                        }));
+                      }
+                    }}
+                    className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base sm:text-sm font-semibold text-zinc-950 focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                  >
+                    {availableCars.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.brand} {c.model} ({c.year} - €{c.price.toLocaleString('nl-BE')})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={customModel}
+                    onChange={(e) => setCustomModel(e.target.value)}
+                    placeholder="Bijv. Audi RS6, BMW X5, of algemene showroomafspraak..."
+                    className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base sm:text-sm font-medium text-zinc-950 focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                  />
+                )}
               </div>
 
               {currentCar && (
-                <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-[#F8F8F8] border border-gray-200 text-xs">
+                <div className="flex items-center gap-3.5 p-3 rounded-xl bg-zinc-50 border border-zinc-200 text-xs">
                   <img
-                    src={currentCar.images[0]}
+                    src={currentCar.images[0] || '/logo2.png'}
                     alt=""
-                    className="w-16 h-12 object-cover rounded-xl"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = '/logo2.png';
+                    }}
+                    className="w-16 h-12 object-cover rounded-lg"
                   />
                   <div>
-                    <div className="font-bold text-[#1A1A1A]">
+                    <div className="font-bold text-zinc-950">
                       {currentCar.brand} {currentCar.model}
                     </div>
-                    <div className="text-gray-500 font-medium">
-                      {currentCar.powerHp} PK • {currentCar.transmission} • {currentCar.fuel}
+                    <div className="text-zinc-500">
+                      {currentCar.powerHp} PK · {currentCar.transmission} · {currentCar.fuel}
                     </div>
                   </div>
                 </div>
@@ -173,7 +210,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                       min={new Date().toISOString().split('T')[0]}
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
+                      className="w-full min-h-[44px] bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-base sm:text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
                     />
                   </div>
                 </div>
@@ -188,7 +225,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                         key={slot}
                         type="button"
                         onClick={() => setFormData({ ...formData, timeSlot: slot })}
-                        className={`py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                        className={`min-h-[42px] py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                           formData.timeSlot === slot
                             ? 'bg-[#FF6B00] text-white border-[#FF6B00] shadow-sm'
                             : 'bg-[#F8F8F8] border-gray-200 text-gray-700 hover:bg-gray-100'
@@ -214,7 +251,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                       placeholder={t.fullName}
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
+                      className="w-full min-h-[44px] bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-base sm:text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
                     />
                   </div>
 
@@ -228,7 +265,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                       placeholder="+32 4XX XX XX XX"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
+                      className="w-full min-h-[44px] bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-base sm:text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
                     />
                   </div>
                 </div>
@@ -243,7 +280,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                     placeholder="email@..."
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
+                    className="w-full min-h-[44px] bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-base sm:text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
                   />
                 </div>
 
@@ -256,7 +293,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                     placeholder="..."
                     value={formData.remarks}
                     onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                    className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl p-3.5 text-xs focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
+                    className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl p-3.5 text-base sm:text-xs focus:ring-2 focus:ring-[#FF6B00] focus:outline-none font-medium"
                   />
                 </div>
               </div>
@@ -297,18 +334,17 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
                 {t.successText}
               </p>
 
-              <div className="p-5 rounded-3xl bg-[#F8F8F8] border border-gray-200 text-xs text-gray-600 max-w-sm mx-auto text-left space-y-1.5 font-medium">
-                <div className="font-black text-[#1A1A1A]">Auto Sale Antwerpen</div>
-                <div>{DEALERSHIP_INFO.name}</div>
-                <div>{DEALERSHIP_INFO.address.full}</div>
+              <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-600 max-w-sm mx-auto text-left space-y-1.5">
+                <div className="font-bold text-zinc-950">{shopName}</div>
+                <div>{shopAddress}</div>
                 <div className="text-[#FF6B00] font-bold pt-1">
-                  Tel: {DEALERSHIP_INFO.contact.phone}
+                  Tel: {shopPhone}
                 </div>
               </div>
 
               <button
                 onClick={onClose}
-                className="inline-block bg-[#1A1A1A] hover:bg-black text-white text-xs font-bold uppercase tracking-wider px-8 py-3 rounded-2xl cursor-pointer transition-colors"
+                className="inline-block bg-[#141416] hover:bg-black text-white text-xs font-bold uppercase tracking-wider px-8 py-3 rounded-xl cursor-pointer transition-colors"
               >
                 {t.close}
               </button>

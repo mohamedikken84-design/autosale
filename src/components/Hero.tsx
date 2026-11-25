@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  Search, ArrowRight, ShieldCheck, Clock, Car, Star, 
-  MapPin, CheckCircle2, Award, Phone, Sparkles, ChevronRight
+import {
+  Search,
+  ArrowRight,
+  ShieldCheck,
+  Clock,
+  Star,
+  CheckCircle2,
+  MapPin,
 } from 'lucide-react';
 import { FilterState, Language, Car as CarType, DealershipSettings } from '../types';
+import { DEFAULT_SHOWROOM_IMAGE } from '../data/dealership';
 import { TRANSLATIONS } from '../i18n/translations';
 
 interface HeroProps {
@@ -30,12 +36,14 @@ export const Hero: React.FC<HeroProps> = ({
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedFuel, setSelectedFuel] = useState('');
   const [selectedMaxPrice, setSelectedMaxPrice] = useState<number>(0);
-  const [bgImage, setBgImage] = useState(dealershipSettings.showroomImageUrl || '/hero-showroom.jpg');
+  const [bgImage, setBgImage] = useState(
+    dealershipSettings.showroomImageUrl || DEFAULT_SHOWROOM_IMAGE
+  );
+  const [bgFailed, setBgFailed] = useState(false);
 
   React.useEffect(() => {
-    if (dealershipSettings.showroomImageUrl) {
-      setBgImage(dealershipSettings.showroomImageUrl);
-    }
+    setBgImage(dealershipSettings.showroomImageUrl || DEFAULT_SHOWROOM_IMAGE);
+    setBgFailed(false);
   }, [dealershipSettings.showroomImageUrl]);
 
   const t = TRANSLATIONS[language]?.hero || TRANSLATIONS.nl.hero;
@@ -45,115 +53,97 @@ export const Hero: React.FC<HeroProps> = ({
     onApplyQuickFilter({
       brand: selectedBrand,
       fuel: selectedFuel,
-      maxPrice: selectedMaxPrice || 250000
+      maxPrice: selectedMaxPrice || 250000,
     });
     onExploreStock();
   };
 
   return (
-    <section id="hero" className="relative bg-[#0F0F10] text-white overflow-hidden border-b border-zinc-800">
-      {/* Background Image with Cinematic Overlay */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src={bgImage}
-          alt="Auto Sale Antwerpen Showroom"
-          onError={() => setBgImage('https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=80')}
-          className="w-full h-full object-cover object-center transform scale-105 transition-transform duration-1000 ease-out"
-          referrerPolicy="no-referrer"
-        />
-        {/* Multilayered gradient overlay for readability and depth */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F10] via-transparent to-black/50" />
+    <section id="hero" className="relative bg-[#111113] text-white overflow-hidden border-b border-zinc-800">
+      {/* Desktop Background Image with Measured Contrast Scrim */}
+      <div className="hidden md:block absolute inset-0 z-0 bg-gradient-to-br from-zinc-950 via-zinc-900 to-neutral-900">
+        {!bgFailed && (
+          <img
+            src={bgImage}
+            alt="Auto Sale Antwerpen Showroom"
+            onError={() => setBgFailed(true)}
+            className="w-full h-full object-cover object-center"
+            referrerPolicy="no-referrer"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/35" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#111113] via-transparent to-black/35" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-6 sm:pt-14 sm:pb-12 flex flex-col justify-between min-h-[420px] sm:min-h-[520px]">
-        {/* Top Badges Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-4 sm:mb-6">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-[#FF6B00] text-white text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-sm">
-              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              <span>Drive Your Dream</span>
-            </span>
+      {/* Mobile Clean Top Showroom Photo Banner (keeps building & sign crisp on small screens) */}
+      <div className="md:hidden relative w-full aspect-[16/10] bg-zinc-950 overflow-hidden">
+        {!bgFailed && (
+          <img
+            src={bgImage}
+            alt="Auto Sale Antwerpen Showroom"
+            onError={() => setBgFailed(true)}
+            className="w-full h-full object-cover object-center"
+            referrerPolicy="no-referrer"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#111113] via-black/25 to-black/10" />
+      </div>
 
-            <span className="inline-flex items-center gap-1 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] sm:text-xs text-gray-200 font-medium truncate max-w-[200px] sm:max-w-none">
-              <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FF6B00] shrink-0" />
-              <span className="truncate">{dealershipSettings.address}, {dealershipSettings.city}</span>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 md:mt-0 pb-8 pt-2 sm:py-16 lg:py-20 flex flex-col justify-between gap-7 sm:gap-10">
+        {/* Clean Top Kicker */}
+        <div className="max-w-3xl space-y-4 sm:space-y-5">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-300 font-medium">
+            <span className="text-[#FF6B00] font-semibold">{t.traxioHeader}</span>
+            <span aria-hidden="true" className="text-zinc-600">·</span>
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
+              <span>{dealershipSettings.address}, {dealershipSettings.city}</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-gray-300 font-semibold">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>{t.showroomOpen}</span>
-            </span>
-            <span className="hidden sm:inline text-gray-500">•</span>
-            <span className="hidden sm:inline text-gray-400">{t.hoursText}</span>
-          </div>
-        </div>
-
-        {/* Central Content Area */}
-        <div className="max-w-3xl space-y-3 sm:space-y-4 my-auto">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-1 flex items-center justify-center shadow-md shrink-0">
-              <img src="/logo2.png" alt="Auto Sale" className="w-full h-full object-contain" />
-            </div>
-            <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-[#FF6B00]">
-              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>{t.traxioHeader}</span>
-            </div>
-          </div>
-
-          <h1 className="text-2xl sm:text-4xl lg:text-6xl font-black font-['Outfit',sans-serif] tracking-tight leading-[1.1] text-white">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold font-['Outfit',sans-serif] tracking-tight leading-[1.08] text-white text-balance">
             Auto Sale <span className="text-[#FF6B00]">Antwerpen</span>
           </h1>
 
-          <p className="text-xs sm:text-base text-gray-300 max-w-2xl leading-relaxed">
+          <p className="text-sm sm:text-base text-zinc-300 max-w-xl leading-relaxed">
             {t.subtitle}
           </p>
 
-          {/* Quick Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
+          {/* Primary + Secondary CTA */}
+          <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2.5 sm:gap-3 pt-1">
             <button
+              type="button"
               onClick={onExploreStock}
-              className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-2xl bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-lg shadow-orange-500/25 flex items-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto min-h-[46px] px-6 py-3 rounded-xl bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
             >
               <span>{t.viewStock} ({totalCarsCount})</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
             <button
+              type="button"
               onClick={onOpenValuation}
-              className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto min-h-[46px] px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-semibold text-sm transition-colors cursor-pointer whitespace-nowrap"
             >
-              <Car className="w-4 h-4 text-[#FF6B00]" />
-              <span>{t.sellCar}</span>
+              {t.sellCar}
             </button>
-
-            <a
-              href={`tel:${dealershipSettings.phoneRaw}`}
-              className="px-3.5 py-2.5 sm:px-4 sm:py-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-gray-300 hover:text-white border border-zinc-700 text-xs font-semibold transition-colors flex items-center gap-2"
-            >
-              <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FF6B00]" />
-              <span className="font-bold text-white">{dealershipSettings.phone}</span>
-            </a>
           </div>
         </div>
 
-        {/* Quick Search & Filter Strip */}
-        <div className="mt-4 sm:mt-8 pt-4 sm:pt-6 border-t border-white/10">
+        {/* Clean Quick Search Strip */}
+        <div className="space-y-4 sm:space-y-5">
           <form
             onSubmit={handleSearchSubmit}
-            className="bg-zinc-900/90 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-white/10 shadow-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center"
+            className="bg-zinc-900/95 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-white/10 grid grid-cols-2 lg:grid-cols-12 gap-2.5 sm:gap-3 items-end"
           >
-            {/* Brand selector */}
-            <div className="lg:col-span-3">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1 px-1">
+            <div className="col-span-1 lg:col-span-3">
+              <label className="block text-[11px] sm:text-xs font-medium text-zinc-400 mb-1.5">
                 {t.brand}
               </label>
               <select
                 value={selectedBrand}
                 onChange={(e) => setSelectedBrand(e.target.value)}
-                className="w-full bg-zinc-800/90 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-[#FF6B00]"
+                className="w-full min-h-[44px] bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-base sm:text-sm font-medium text-white focus:outline-none focus:border-[#FF6B00]"
               >
                 <option value="">{t.allBrands}</option>
                 {availableBrands.map((brand) => (
@@ -164,15 +154,14 @@ export const Hero: React.FC<HeroProps> = ({
               </select>
             </div>
 
-            {/* Fuel selector */}
-            <div className="lg:col-span-3">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1 px-1">
+            <div className="col-span-1 lg:col-span-3">
+              <label className="block text-[11px] sm:text-xs font-medium text-zinc-400 mb-1.5">
                 {t.fuel}
               </label>
               <select
                 value={selectedFuel}
                 onChange={(e) => setSelectedFuel(e.target.value)}
-                className="w-full bg-zinc-800/90 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-[#FF6B00]"
+                className="w-full min-h-[44px] bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-base sm:text-sm font-medium text-white focus:outline-none focus:border-[#FF6B00]"
               >
                 <option value="">{t.allFuels}</option>
                 <option value="Benzine">{t.petrol}</option>
@@ -182,48 +171,43 @@ export const Hero: React.FC<HeroProps> = ({
               </select>
             </div>
 
-            {/* Max budget selector */}
-            <div className="lg:col-span-3">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1 px-1">
+            <div className="col-span-2 sm:col-span-1 lg:col-span-3">
+              <label className="block text-[11px] sm:text-xs font-medium text-zinc-400 mb-1.5">
                 {t.budget}
               </label>
               <select
                 value={selectedMaxPrice}
                 onChange={(e) => setSelectedMaxPrice(Number(e.target.value))}
-                className="w-full bg-zinc-800/90 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-[#FF6B00]"
+                className="w-full min-h-[44px] bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-base sm:text-sm font-medium text-white focus:outline-none focus:border-[#FF6B00]"
               >
                 <option value={0}>{t.noLimit}</option>
-                <option value={20000}>{t.upTo} € 20.000</option>
-                <option value={35000}>{t.upTo} € 35.000</option>
-                <option value={50000}>{t.upTo} € 50.000</option>
-                <option value={75000}>{t.upTo} € 75.000</option>
-                <option value={100000}>{t.upTo} € 100.000+</option>
+                <option value={25000}>{t.upTo} € 25.000</option>
+                <option value={40000}>{t.upTo} € 40.000</option>
+                <option value={60000}>{t.upTo} € 60.000</option>
+                <option value={85000}>{t.upTo} € 85.000</option>
+                <option value={120000}>{t.upTo} € 120.000+</option>
               </select>
             </div>
 
-            {/* Search button */}
-            <div className="lg:col-span-3 flex items-end">
+            <div className="col-span-2 sm:col-span-1 lg:col-span-3">
               <button
                 type="submit"
-                className="w-full mt-auto bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-wider py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md shadow-orange-500/20"
+                className="w-full min-h-[44px] bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-sm py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <Search className="w-4 h-4" />
                 <span>{t.searchButton}</span>
-                <span className="ml-1 px-1.5 py-0.5 rounded bg-black/30 text-[10px] font-mono">
-                  {totalCarsCount}
-                </span>
               </button>
             </div>
           </form>
 
-          {/* Micro Trust Strip below search */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-[11px] text-gray-400">
+          {/* Clean Trust Strip */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 text-xs text-zinc-300">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#FF6B00] shrink-0" />
               <span>{t.carPass100}</span>
             </div>
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-[#FF6B00] shrink-0" />
               <span>{t.checks113}</span>
             </div>
             <div className="flex items-center gap-2">

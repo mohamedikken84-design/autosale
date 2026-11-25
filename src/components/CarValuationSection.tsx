@@ -1,20 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  Car, 
-  CheckCircle2, 
-  ShieldCheck, 
-  ArrowRight, 
-  Banknote, 
-  Clock, 
-  FileCheck, 
-  Sparkles,
-  ChevronRight,
+import {
+  CheckCircle2,
+  ArrowRight,
+  Banknote,
+  Clock,
+  FileCheck,
   Send,
-  AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ValuationFormState, Language } from '../types';
-import { DEALERSHIP_INFO } from '../data/dealership';
 import { TRANSLATIONS } from '../i18n/translations';
 
 interface CarValuationSectionProps {
@@ -24,7 +18,7 @@ interface CarValuationSectionProps {
 
 export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
   onValuationSubmit,
-  language = 'nl'
+  language = 'nl',
 }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -46,7 +40,7 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
     name: '',
     phone: '',
     email: '',
-    notes: ''
+    notes: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -57,9 +51,8 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault();
     if (step < 3) {
-      setStep((prev) => (prev + 1) as any);
+      setStep((prev) => (prev + 1) as 1 | 2 | 3);
     } else {
-      // Final submit
       const ref = 'AS-TAX-' + Math.floor(100000 + Math.random() * 900000);
       setReferenceNumber(ref);
       setIsSubmitted(true);
@@ -67,9 +60,9 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
         onValuationSubmit(formData, ref);
       }
       confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
+        particleCount: 60,
+        spread: 60,
+        origin: { y: 0.6 },
       });
     }
   };
@@ -90,127 +83,97 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
       name: '',
       phone: '',
       email: '',
-      notes: ''
+      notes: '',
     });
   };
 
   return (
-    <section id="overname" className="py-16 lg:py-24 bg-[#1A1A1A] text-white relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left Column: Value Proposition & Trust Points (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FF6B00] text-white text-xs font-bold uppercase tracking-widest shadow-sm">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{t.badge}</span>
-            </div>
+    <section id="overname" className="py-10 sm:py-16 lg:py-20 bg-[#141416] text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+          {/* Left Column: Clean Value Proposition */}
+          <div className="lg:col-span-5 space-y-5 sm:space-y-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#FF6B00]">
+              {t.badge}
+            </p>
 
-            <h2 className="text-3xl sm:text-5xl font-black font-['Outfit',sans-serif] tracking-tighter leading-tight">
+            <h2 className="text-2xl sm:text-4xl font-extrabold font-['Outfit',sans-serif] tracking-tight leading-tight text-balance">
               {t.title}
             </h2>
 
-            <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+            <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
               {t.subtitle}
             </p>
 
-            {/* Criteria Box */}
-            <div className="p-5 rounded-3xl bg-black/40 border border-zinc-800 text-xs text-gray-300">
-              <div className="font-bold text-white mb-1.5 flex items-center gap-2 text-sm uppercase tracking-wider">
-                <AlertCircle className="w-4 h-4 text-[#FF6B00]" />
-                <span>{t.benefit1 || 'Inkoop & Overname'}</span>
-              </div>
-              <p className="leading-relaxed">
-                {t.subtitle}
-              </p>
-            </div>
-
-            {/* 3 Inkoop Voordelen */}
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#FF6B00]/10 text-[#FF6B00] flex items-center justify-center shrink-0 border border-[#FF6B00]/20">
-                  <Banknote className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white">{t.benefit1}</h4>
-                  <p className="text-xs text-gray-400">{t.benefit2}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#FF6B00]/10 text-[#FF6B00] flex items-center justify-center shrink-0 border border-[#FF6B00]/20">
-                  <FileCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white">{t.benefit2}</h4>
-                  <p className="text-xs text-gray-400">{t.benefit3}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#FF6B00]/10 text-[#FF6B00] flex items-center justify-center shrink-0 border border-[#FF6B00]/20">
+            <div className="space-y-3.5 sm:space-y-4 pt-2 border-t border-zinc-800">
+              <div className="flex items-center gap-3.5 pt-2">
+                <div className="w-10 h-10 rounded-xl bg-zinc-800/80 text-[#FF6B00] flex items-center justify-center shrink-0">
                   <Clock className="w-5 h-5" />
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white">{t.benefit3}</h4>
-                  <p className="text-xs text-gray-400">{t.subtitle}</p>
+                <div className="text-sm font-semibold text-white">{t.benefit1}</div>
+              </div>
+
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-zinc-800/80 text-[#FF6B00] flex items-center justify-center shrink-0">
+                  <Banknote className="w-5 h-5" />
                 </div>
+                <div className="text-sm font-semibold text-white">{t.benefit2}</div>
+              </div>
+
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-zinc-800/80 text-[#FF6B00] flex items-center justify-center shrink-0">
+                  <FileCheck className="w-5 h-5" />
+                </div>
+                <div className="text-sm font-semibold text-white">{t.benefit3}</div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Interactive 3-Step Valuation Form (7 cols) */}
+          {/* Right Column: Clean 3-Step Valuation Form */}
           <div className="lg:col-span-7">
-            <div className="bg-white text-[#1A1A1A] rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100">
+            <div className="bg-white text-zinc-950 rounded-2xl p-5 sm:p-8 shadow-xl">
               {!isSubmitted ? (
                 <div>
                   {/* Step Indicators */}
-                  <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                        step === 1 ? 'bg-[#FF6B00] text-white' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        1
-                      </span>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] hidden sm:inline">{t.step1}</span>
-                    </div>
-
-                    <div className="w-8 h-0.5 bg-gray-200" />
-
-                    <div className="flex items-center gap-2">
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                        step === 2 ? 'bg-[#FF6B00] text-white' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        2
-                      </span>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] hidden sm:inline">{t.step2}</span>
-                    </div>
-
-                    <div className="w-8 h-0.5 bg-gray-200" />
-
-                    <div className="flex items-center gap-2">
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                        step === 3 ? 'bg-[#FF6B00] text-white' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        3
-                      </span>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] hidden sm:inline">{t.step3}</span>
-                    </div>
+                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-200 text-xs font-semibold">
+                    {[
+                      { num: 1, label: t.step1 },
+                      { num: 2, label: t.step2 },
+                      { num: 3, label: t.step3 },
+                    ].map((item, idx) => (
+                      <React.Fragment key={item.num}>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tabular-nums ${
+                              step === item.num
+                                ? 'bg-[#FF6B00] text-white'
+                                : step > item.num
+                                ? 'bg-zinc-900 text-white'
+                                : 'bg-zinc-100 text-zinc-500'
+                            }`}
+                          >
+                            {item.num}
+                          </span>
+                          <span className={`hidden sm:inline ${step === item.num ? 'text-zinc-950 font-bold' : 'text-zinc-500'}`}>
+                            {item.label}
+                          </span>
+                        </div>
+                        {idx < 2 && <div className="flex-1 h-px bg-zinc-200 mx-3" />}
+                      </React.Fragment>
+                    ))}
                   </div>
 
-                  {/* Form Step 1: Vehicle Basics */}
+                  {/* Step 1: Vehicle Basics */}
                   {step === 1 && (
                     <form onSubmit={handleNext} className="space-y-4">
-                      <h3 className="text-2xl font-black font-['Outfit',sans-serif] text-[#1A1A1A] tracking-tight">
+                      <h3 className="text-lg sm:text-xl font-bold font-['Outfit',sans-serif] text-zinc-950">
                         {t.step1Title}
                       </h3>
-                      <p className="text-xs text-gray-500 mb-4">
-                        {t.step1Subtitle}
-                      </p>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                         <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            {t.licensePlate}
+                          <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                            {t.plate}
                           </label>
                           <input
                             type="text"
@@ -218,12 +181,12 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             value={formData.licensePlate}
                             onChange={handleChange}
                             placeholder="1-ABC-123"
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold uppercase focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                            className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-medium uppercase focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                          <label className="block text-xs font-semibold text-zinc-700 mb-1">
                             {tHero.brand} *
                           </label>
                           <input
@@ -233,12 +196,12 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             value={formData.brand}
                             onChange={handleChange}
                             placeholder="Land Rover, Mercedes, BMW..."
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                            className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-medium focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                          <label className="block text-xs font-semibold text-zinc-700 mb-1">
                             {t.model} *
                           </label>
                           <input
@@ -248,12 +211,12 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             value={formData.model}
                             onChange={handleChange}
                             placeholder="Range Rover Sport P440e..."
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                            className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-medium focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                          <label className="block text-xs font-semibold text-zinc-700 mb-1">
                             {t.year} *
                           </label>
                           <input
@@ -264,13 +227,13 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             required
                             value={formData.year}
                             onChange={handleChange}
-                            placeholder="bv. 2021"
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                            placeholder="2021"
+                            className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-medium focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                          <label className="block text-xs font-semibold text-zinc-700 mb-1">
                             {t.mileage} *
                           </label>
                           <input
@@ -280,20 +243,20 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             required
                             value={formData.mileage}
                             onChange={handleChange}
-                            placeholder="bv. 45000"
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                            placeholder="45000"
+                            className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-medium focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            {tHero.fuel} *
+                          <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                            {t.fuel} *
                           </label>
                           <select
                             name="fuel"
                             value={formData.fuel}
                             onChange={handleChange}
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                            className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-medium focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           >
                             <option value="Benzine">{tHero.petrol}</option>
                             <option value="Diesel">{tHero.diesel}</option>
@@ -303,10 +266,10 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                         </div>
                       </div>
 
-                      <div className="pt-4 flex justify-end">
+                      <div className="pt-3 flex justify-end">
                         <button
                           type="submit"
-                          className="inline-flex items-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-3.5 px-6 rounded-2xl transition-all cursor-pointer shadow-md"
+                          className="w-full sm:w-auto min-h-[46px] inline-flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-xl transition-colors cursor-pointer"
                         >
                           <span>{t.nextStep}</span>
                           <ArrowRight className="w-4 h-4" />
@@ -315,83 +278,78 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                     </form>
                   )}
 
-                  {/* Form Step 2: Condition & Pricing */}
+                  {/* Step 2: Condition & Pricing */}
                   {step === 2 && (
                     <form onSubmit={handleNext} className="space-y-4">
-                      <h3 className="text-xl font-bold font-['Outfit',sans-serif] text-zinc-950">
+                      <h3 className="text-lg sm:text-xl font-bold font-['Outfit',sans-serif] text-zinc-950">
                         {t.step2Title}
                       </h3>
-                      <p className="text-xs text-zinc-500 mb-4">
-                        {t.step2Subtitle}
-                      </p>
 
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-xs font-bold text-zinc-700 mb-1.5">
-                            {t.condition} *
-                          </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                            {[
-                              { id: 'uitstekend', label: t.conditionExcellent, sub: '' },
-                              { id: 'goed', label: t.conditionGood, sub: '' },
-                              { id: 'gebruikt', label: t.conditionFair, sub: '' }
-                            ].map((c) => (
-                              <button
-                                key={c.id}
-                                type="button"
-                                onClick={() => setFormData((prev) => ({ ...prev, condition: c.id as any }))}
-                                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                                  formData.condition === c.id
-                                    ? 'border-[#FF6B00] bg-orange-50/50 ring-2 ring-[#FF6B00]'
-                                    : 'border-gray-200 hover:bg-gray-50'
-                                }`}
-                              >
-                                <div className="font-bold text-xs uppercase tracking-wider text-[#1A1A1A]">{c.label}</div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            {t.expectedPrice}
-                          </label>
-                          <input
-                            type="text"
-                            name="expectedPrice"
-                            value={formData.expectedPrice}
-                            onChange={handleChange}
-                            placeholder="€ 45.000"
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            {t.notes}
-                          </label>
-                          <textarea
-                            name="notes"
-                            rows={3}
-                            value={formData.notes}
-                            onChange={handleChange}
-                            placeholder="..."
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl p-4 text-xs font-semibold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
-                          />
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-700 mb-2">
+                          {t.condition} *
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          {[
+                            { id: 'uitstekend', label: t.conditionExcellent },
+                            { id: 'goed', label: t.conditionGood },
+                            { id: 'gebruikt', label: t.conditionFair },
+                          ].map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setFormData((prev) => ({ ...prev, condition: c.id as any }))}
+                              className={`min-h-[44px] p-3.5 rounded-xl border text-left transition-colors cursor-pointer text-xs font-bold ${
+                                formData.condition === c.id
+                                  ? 'border-[#FF6B00] bg-orange-50 text-zinc-950 ring-1 ring-[#FF6B00]'
+                                  : 'border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+                              }`}
+                            >
+                              {c.label}
+                            </button>
+                          ))}
                         </div>
                       </div>
 
-                      <div className="pt-4 flex justify-between">
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                          {t.expectedPrice}
+                        </label>
+                        <input
+                          type="text"
+                          name="expectedPrice"
+                          value={formData.expectedPrice}
+                          onChange={handleChange}
+                          placeholder="€ 45.000"
+                          className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-medium focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                          {t.notes}
+                        </label>
+                        <textarea
+                          name="notes"
+                          rows={3}
+                          value={formData.notes}
+                          onChange={handleChange}
+                          placeholder="Onderhoudshistoriek, opties..."
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 text-base sm:text-sm focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="pt-3 flex justify-between items-center gap-3">
                         <button
                           type="button"
                           onClick={() => setStep(1)}
-                          className="text-xs font-bold uppercase tracking-wider text-gray-600 hover:text-black py-3 px-4 cursor-pointer"
+                          className="min-h-[44px] text-xs font-semibold text-zinc-600 hover:text-zinc-950 py-2.5 px-4 cursor-pointer"
                         >
                           ← {t.previousStep}
                         </button>
                         <button
                           type="submit"
-                          className="inline-flex items-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-3.5 px-6 rounded-2xl transition-all cursor-pointer shadow-md"
+                          className="min-h-[46px] inline-flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-3 px-6 rounded-xl transition-colors cursor-pointer"
                         >
                           <span>{t.nextStep}</span>
                           <ArrowRight className="w-4 h-4" />
@@ -400,20 +358,17 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                     </form>
                   )}
 
-                  {/* Form Step 3: Contact Details & Submit */}
+                  {/* Step 3: Contact Details & Submit */}
                   {step === 3 && (
                     <form onSubmit={handleNext} className="space-y-4">
-                      <h3 className="text-2xl font-black font-['Outfit',sans-serif] text-[#1A1A1A] tracking-tight">
+                      <h3 className="text-lg sm:text-xl font-bold font-['Outfit',sans-serif] text-zinc-950">
                         {t.step3Title}
                       </h3>
-                      <p className="text-xs text-gray-500 mb-4">
-                        {t.step3Subtitle}
-                      </p>
 
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            {t.yourName} *
+                          <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                            {t.name} *
                           </label>
                           <input
                             type="text"
@@ -421,62 +376,57 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                             required
                             value={formData.name}
                             onChange={handleChange}
-                            placeholder="Alex..."
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                            placeholder={t.name}
+                            className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-medium focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
                           />
                         </div>
 
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            {t.phone} *
-                          </label>
-                          <input
-                            type="tel"
-                            name="phone"
-                            required
-                            value={formData.phone}
-                            onChange={handleChange}
-                            placeholder="+32 4XX XX XX XX"
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
-                          />
-                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                              {t.phone} *
+                            </label>
+                            <input
+                              type="tel"
+                              name="phone"
+                              required
+                              value={formData.phone}
+                              onChange={handleChange}
+                              placeholder="+32 4XX XX XX XX"
+                              className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-medium focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                            />
+                          </div>
 
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                            {t.email} *
-                          </label>
-                          <input
-                            type="email"
-                            name="email"
-                            required
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="alex@..."
-                            className="w-full bg-[#F8F8F8] border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
-                          />
+                          <div>
+                            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                              {t.email} *
+                            </label>
+                            <input
+                              type="email"
+                              name="email"
+                              required
+                              value={formData.email}
+                              onChange={handleChange}
+                              placeholder="naam@email.be"
+                              className="w-full min-h-[44px] bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-medium focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
+                            />
+                          </div>
                         </div>
                       </div>
 
-                      <div className="p-4 bg-[#F8F8F8] rounded-2xl text-xs text-gray-600 flex items-start gap-2 border border-gray-100">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>
-                          {t.privacyNote}
-                        </span>
-                      </div>
-
-                      <div className="pt-4 flex justify-between items-center">
+                      <div className="pt-3 flex justify-between items-center gap-3">
                         <button
                           type="button"
                           onClick={() => setStep(2)}
-                          className="text-xs font-bold uppercase tracking-wider text-gray-600 hover:text-black py-3 px-4 cursor-pointer"
+                          className="min-h-[44px] text-xs font-semibold text-zinc-600 hover:text-zinc-950 py-2.5 px-4 cursor-pointer"
                         >
                           ← {t.previousStep}
                         </button>
                         <button
                           type="submit"
-                          className="inline-flex items-center gap-2 bg-[#1A1A1A] hover:bg-[#FF6B00] text-white font-bold uppercase text-xs tracking-wider py-4 px-8 rounded-2xl shadow-md transition-all cursor-pointer"
+                          className="min-h-[46px] inline-flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-3 px-6 rounded-xl transition-colors cursor-pointer"
                         >
-                          <Send className="w-4 h-4 text-[#FF6B00]" />
+                          <Send className="w-4 h-4" />
                           <span>{t.submit}</span>
                         </button>
                       </div>
@@ -484,29 +434,25 @@ export const CarValuationSection: React.FC<CarValuationSectionProps> = ({
                   )}
                 </div>
               ) : (
-                /* Success Screen */
                 <div className="text-center py-8 space-y-4">
-                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
-                    <CheckCircle2 className="w-8 h-8" />
+                  <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+                    <CheckCircle2 className="w-7 h-7" />
                   </div>
                   <h3 className="text-2xl font-bold font-['Outfit',sans-serif] text-zinc-950">
                     {t.successTitle}
                   </h3>
-                  <div className="inline-block bg-zinc-100 px-4 py-1.5 rounded-lg text-xs font-mono font-bold text-zinc-700">
+                  <div className="inline-block bg-zinc-100 px-3.5 py-1 rounded-lg text-xs font-mono font-bold text-zinc-700">
                     Ref: {referenceNumber}
                   </div>
                   <p className="text-sm text-zinc-600 max-w-md mx-auto leading-relaxed">
                     {t.successText}
                   </p>
-
-                  <div className="pt-4 flex justify-center gap-3">
-                    <button
-                      onClick={handleReset}
-                      className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors cursor-pointer"
-                    >
-                      {t.badge}
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleReset}
+                    className="bg-zinc-950 hover:bg-[#FF6B00] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Nieuwe schatting aanvragen
+                  </button>
                 </div>
               )}
             </div>

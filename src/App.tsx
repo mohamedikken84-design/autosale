@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Phone, MessageCircle, CarFront, CalendarCheck } from 'lucide-react';
 import { CARS_DATA } from './data/cars';
-import { DEALERSHIP_INFO } from './data/dealership';
+import { DEALERSHIP_INFO, DEFAULT_SHOWROOM_IMAGE } from './data/dealership';
 import { Car, FilterState, Language, Currency, DealershipSettings, UserRole, LeadInquiry, ValuationFormState, TestDriveBooking } from './types';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -25,13 +26,24 @@ const CURRENCY_STORAGE_KEY = 'auto_sale_currency';
 const LEADS_STORAGE_KEY = 'auto_sale_leads_v2';
 const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+const LEGACY_SHOWROOM_IMAGES = ['/hero-showroom.jpg', '/dealership-building.jpg'];
 
 export default function App() {
   // Dealership Settings (persisted)
   const [dealershipSettings, setDealershipSettings] = useState<DealershipSettings>(() => {
     try {
       const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved) as DealershipSettings;
+        const currentPhoto = parsed.showroomImageUrl?.trim();
+        return {
+          ...parsed,
+          showroomImageUrl:
+            !currentPhoto || LEGACY_SHOWROOM_IMAGES.includes(currentPhoto)
+              ? DEFAULT_SHOWROOM_IMAGE
+              : currentPhoto,
+        };
+      }
     } catch {
       // ignore
     }
@@ -45,6 +57,7 @@ export default function App() {
       whatsapp: DEALERSHIP_INFO.contact.whatsapp,
       email: DEALERSHIP_INFO.contact.email,
       googleMapsUrl: DEALERSHIP_INFO.address.googleMapsUrl,
+      showroomImageUrl: DEFAULT_SHOWROOM_IMAGE,
       facebookUrl: 'https://www.facebook.com/autosaleantwerpen',
       instagramUrl: 'https://www.instagram.com/autosaleantwerpen',
       autoscoutDealerUrl: 'https://www.autoscout24.be/nl/verkopers/auto-sale-antwerpen',
@@ -336,6 +349,31 @@ export default function App() {
     setLeads((prev) => [newLead, ...prev]);
   };
 
+  const handleFinancingInquiry = (req: {
+    name: string;
+    phone: string;
+    carPrice: number;
+    downPaymentAmount: number;
+    months: number;
+    balloonAmount: number;
+    monthlyPayment: number;
+  }) => {
+    const nowMs = Date.now();
+    const newLead: LeadInquiry = {
+      id: 'lead-' + nowMs,
+      date: new Date().toLocaleDateString('nl-BE') + ' ' + new Date().toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: nowMs,
+      type: 'contact',
+      name: req.name,
+      email: '-',
+      phone: req.phone,
+      carTitle: `Financieringsaanvraag (€${req.carPrice.toLocaleString('nl-BE')})`,
+      message: `Maandbedrag: ~€${req.monthlyPayment}/mnd | Looptijd: ${req.months} mnd | Voorschot: €${req.downPaymentAmount.toLocaleString('nl-BE')} | Slotsom: €${req.balloonAmount.toLocaleString('nl-BE')}`,
+      status: 'new'
+    };
+    setLeads((prev) => [newLead, ...prev]);
+  };
+
   // Favorites persisted in localStorage
   const [favorites, setFavorites] = useState<string[]>(() => {
     try {
@@ -415,7 +453,7 @@ export default function App() {
       // Category tab
       if (filters.category !== 'all') {
         if (filters.category === 'hybrid-electric') {
-          if (car.fuel !== 'Plug-in Hybride' && car.fuel !== 'Elektrisch') return false;
+          if (!car.fuel.toLowerCase().includes('hybride') && car.fuel !== 'Elektrisch') return false;
         } else if (car.category !== filters.category) {
           return false;
         }
@@ -427,8 +465,12 @@ export default function App() {
       }
 
       // Fuel dropdown
-      if (filters.fuel && car.fuel !== filters.fuel) {
-        return false;
+      if (filters.fuel) {
+        if (filters.fuel === 'Hybride') {
+          if (!car.fuel.toLowerCase().includes('hybride')) return false;
+        } else if (car.fuel !== filters.fuel) {
+          return false;
+        }
       }
 
       // Transmission dropdown
@@ -541,7 +583,11 @@ export default function App() {
         />
 
         {/* Financing & Leasing Calculator */}
-        <FinancingCalculator language={language} currency={currency} />
+        <FinancingCalculator
+          language={language}
+          currency={currency}
+          onFinancingSubmit={handleFinancingInquiry}
+        />
 
         {/* Traxio Kwaliteitsgarantie & 25-Year Heritage */}
         <AboutSection
@@ -564,7 +610,53 @@ export default function App() {
         onNavigate={handleNavigate}
         dealershipSettings={dealershipSettings}
         language={language}
+        isLoggedIn={!!currentUser}
+        onOpenDealerLogin={() => (currentUser ? setIsDealerDashboardOpen(true) : setIsDealerLoginOpen(true))}
       />
+
+      {/* Mobile Sticky Quick-Action Thumb Bar */}
+      <nav
+        aria-label="Mobiele snelle acties"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 h-14 bg-white/95 backdrop-blur-md border-t border-zinc-200 grid grid-cols-4 items-center px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+      >
+        <button
+          type="button"
+          onClick={() => handleNavigate('stock')}
+          className={`flex flex-col items-center justify-center h-full gap-0.5 text-[11px] font-semibold transition-colors cursor-pointer ${
+            activeSection === 'stock' ? 'text-[#FF6B00]' : 'text-zinc-700'
+          }`}
+        >
+          <CarFront className="w-4 h-4" />
+          <span>Aanbod</span>
+        </button>
+
+        <a
+          href={`tel:${dealershipSettings.phoneRaw}`}
+          className="flex flex-col items-center justify-center h-full gap-0.5 text-[11px] font-semibold text-zinc-700 hover:text-zinc-950"
+        >
+          <Phone className="w-4 h-4 text-[#FF6B00]" />
+          <span>Bellen</span>
+        </a>
+
+        <a
+          href={`https://wa.me/${(dealershipSettings.whatsapp || DEALERSHIP_INFO.contact.whatsapp).replace(/[^0-9]/g, '')}?text=Hallo%20Auto%20Sale%2C%20ik%20heb%20een%20vraag.`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center justify-center h-full gap-0.5 text-[11px] font-semibold text-zinc-700 hover:text-emerald-700"
+        >
+          <MessageCircle className="w-4 h-4 text-emerald-600" />
+          <span>WhatsApp</span>
+        </a>
+
+        <button
+          type="button"
+          onClick={() => handleOpenTestDriveModal()}
+          className="flex flex-col items-center justify-center h-full gap-0.5 text-[11px] font-bold text-[#FF6B00] cursor-pointer"
+        >
+          <CalendarCheck className="w-4 h-4" />
+          <span>Proefrit</span>
+        </button>
+      </nav>
 
       {/* GDPR Cookie Consent Banner */}
       <CookieBanner language={language} />
@@ -592,6 +684,7 @@ export default function App() {
         allCars={publicCars}
         onBookingSuccess={handleTestDriveSuccess}
         language={language}
+        dealershipSettings={dealershipSettings}
       />
 
       <FavoritesDrawer
@@ -603,6 +696,8 @@ export default function App() {
         onSelectCar={(car) => setSelectedCarForDetail(car)}
         onRequestTestDrive={(car) => handleOpenTestDriveModal(car)}
         language={language}
+        currency={currency}
+        dealershipSettings={dealershipSettings}
       />
 
       {/* Dealer Login Modal */}

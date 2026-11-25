@@ -1,3 +1,4 @@
+import http from 'http';
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
@@ -5,6 +6,7 @@ import { scrapeAutoScoutListing } from './src/utils/autoscoutScraperServer';
 
 async function startServer() {
   const app = express();
+  const httpServer = http.createServer(app);
   const PORT = 3000;
 
   // JSON middleware
@@ -32,9 +34,11 @@ async function startServer() {
       });
     } catch (err: any) {
       console.error('[AutoScout Scraper] Error:', err);
-      return res.status(500).json({
+      const isBlocked = /geblokkeerd|cloudflare|403|datadome/i.test(err?.message || '');
+      return res.status(isBlocked ? 422 : 500).json({
         success: false,
-        error: err.message || 'Kon advertentie niet ophalen van AutoScout24.'
+        blocked: isBlocked,
+        error: err?.message || 'Kon advertentie niet ophalen van AutoScout24.'
       });
     }
   });
@@ -42,7 +46,23 @@ async function startServer() {
   // Vite development middleware vs production static serving
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      plugins: [
+        {
+          name: 'attach-express-http-server',
+          config() {
+            return {
+              server: {
+                hmr: {
+                  server: httpServer,
+                },
+              },
+            };
+          },
+        },
+      ],
+      server: {
+        middlewareMode: true,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -54,7 +74,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
 }

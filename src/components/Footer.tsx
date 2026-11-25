@@ -1,14 +1,5 @@
 import React from 'react';
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Clock, 
-  ExternalLink, 
-  ShieldCheck, 
-  CarFront, 
-  ArrowUp
-} from 'lucide-react';
+import { MapPin, Phone, Mail, ArrowUp, Lock } from 'lucide-react';
 import { DEALERSHIP_INFO } from '../data/dealership';
 import { DealershipSettings, Language } from '../types';
 import { TRANSLATIONS } from '../i18n/translations';
@@ -17,12 +8,16 @@ interface FooterProps {
   onNavigate: (sectionId: string) => void;
   dealershipSettings?: DealershipSettings;
   language?: Language;
+  isLoggedIn?: boolean;
+  onOpenDealerLogin?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ 
-  onNavigate, 
+export const Footer: React.FC<FooterProps> = ({
+  onNavigate,
   dealershipSettings,
-  language = 'nl'
+  language = 'nl',
+  isLoggedIn = false,
+  onOpenDealerLogin,
 }) => {
   const t = TRANSLATIONS[language]?.footer || TRANSLATIONS.nl.footer;
   const tNav = TRANSLATIONS[language]?.nav || TRANSLATIONS.nl.nav;
@@ -36,48 +31,49 @@ export const Footer: React.FC<FooterProps> = ({
   const phoneRaw = dealershipSettings?.phoneRaw || DEALERSHIP_INFO.contact.phoneRaw;
   const email = dealershipSettings?.email || DEALERSHIP_INFO.contact.email;
   const address = dealershipSettings?.address || DEALERSHIP_INFO.address.street;
+  const zipCode = dealershipSettings?.zipCode || DEALERSHIP_INFO.address.postalCode;
   const city = dealershipSettings?.city || DEALERSHIP_INFO.address.city;
-  const instagram = dealershipSettings?.instagram;
-  const facebook = dealershipSettings?.facebook;
-  const tiktok = dealershipSettings?.tiktok;
+  const googleMapsUrl = dealershipSettings?.googleMapsUrl || DEALERSHIP_INFO.address.googleMapsUrl;
+  const instagram = dealershipSettings?.instagramUrl;
+  const facebook = dealershipSettings?.facebookUrl;
+  const tiktok = dealershipSettings?.tiktokUrl;
+  const autoscout = dealershipSettings?.autoscoutUrl || dealershipSettings?.autoscoutDealerUrl;
 
   return (
-    <footer className="bg-[#1A1A1A] text-gray-400 text-xs border-t border-zinc-800">
-      {/* Upper Footer with badges */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-8 lg:gap-10">
-          {/* Col 1: Brand & Bio (2 cols on lg) */}
-          <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white/5 border border-white/10 p-1 shadow-md shrink-0">
-                <img 
-                  src="/logo2.png" 
-                  alt="Auto Sale Logo" 
-                  className="w-full h-full object-contain" 
-                />
-              </div>
+    <footer className="bg-[#141416] text-zinc-400 text-xs border-t border-zinc-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
+          <div className="sm:col-span-2 lg:col-span-2 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <img src="/logo2.png" alt="Auto Sale Logo" className="w-8 h-8 object-contain" />
               <div>
-                <span className="text-lg sm:text-xl font-black text-white font-['Outfit',sans-serif] tracking-tight">
+                <span className="text-lg font-extrabold text-white font-['Outfit',sans-serif] tracking-tight">
                   AUTO <span className="text-[#FF6B00]">SALE</span>
                 </span>
-                <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">
-                  NV • {address}, {city}
-                </p>
               </div>
             </div>
 
-            <p className="text-gray-400 text-xs leading-relaxed max-w-sm font-medium">
+            <p className="text-zinc-400 text-xs leading-relaxed max-w-sm">
               {t.aboutText}
             </p>
 
-            {/* Social Media Links */}
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-4 text-xs">
+              {autoscout && (
+                <a
+                  href={autoscout}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-300 hover:text-[#FF6B00] transition-colors font-medium"
+                >
+                  AutoScout24
+                </a>
+              )}
               {instagram && (
                 <a
                   href={instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 hover:text-white text-[11px] font-bold transition-colors"
+                  className="text-zinc-300 hover:text-[#FF6B00] transition-colors font-medium"
                 >
                   Instagram
                 </a>
@@ -87,7 +83,7 @@ export const Footer: React.FC<FooterProps> = ({
                   href={facebook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 hover:text-white text-[11px] font-bold transition-colors"
+                  className="text-zinc-300 hover:text-[#FF6B00] transition-colors font-medium"
                 >
                   Facebook
                 </a>
@@ -97,91 +93,55 @@ export const Footer: React.FC<FooterProps> = ({
                   href={tiktok}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 hover:text-white text-[11px] font-bold transition-colors"
+                  className="text-zinc-300 hover:text-[#FF6B00] transition-colors font-medium"
                 >
                   TikTok
                 </a>
               )}
             </div>
-
-            <div className="pt-1 flex flex-wrap items-center gap-2 sm:gap-3">
-              <div className="px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-black/50 border border-zinc-800 text-[10px] sm:text-[11px] font-bold text-gray-300 flex items-center gap-2">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#FF6B00]" />
-                <span>Traxio Gecertificeerd</span>
-              </div>
-              <div className="px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-black/50 border border-zinc-800 text-[10px] sm:text-[11px] font-bold text-gray-300 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>Car-Pass Partner</span>
-              </div>
-            </div>
           </div>
 
-          {/* Col 2: Snelle Links */}
-          <div className="space-y-2 sm:space-y-3">
-            <h4 className="text-white font-black text-xs font-['Outfit',sans-serif] uppercase tracking-widest">
+          <div className="space-y-3">
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider">
               {t.navigation}
             </h4>
-            <ul className="space-y-1.5 sm:space-y-2 text-xs font-medium">
-              <li>
-                <button
-                  onClick={() => onNavigate('stock')}
-                  className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer"
-                >
-                  {tNav.stock}
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => onNavigate('overname')}
-                  className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer"
-                >
-                  {tNav.valuation}
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => onNavigate('financiering')}
-                  className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer"
-                >
-                  {tNav.financing}
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => onNavigate('garantie')}
-                  className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer"
-                >
-                  {tNav.warranty}
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => onNavigate('over-ons')}
-                  className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer"
-                >
-                  {tNav.about}
-                </button>
-              </li>
+            <ul className="space-y-2 text-xs">
+              {[
+                { id: 'stock', label: tNav.stock },
+                { id: 'overname', label: tNav.valuation },
+                { id: 'financiering', label: tNav.financing },
+                { id: 'over-ons', label: tNav.about },
+                { id: 'contact', label: tNav.contact },
+              ].map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(item.id)}
+                    className="hover:text-[#FF6B00] transition-colors text-left cursor-pointer py-0.5"
+                  >
+                    {item.label}
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Col 3: Contact Details */}
-          <div className="space-y-2 sm:space-y-3">
-            <h4 className="text-white font-black text-xs font-['Outfit',sans-serif] uppercase tracking-widest">
+          <div className="space-y-3">
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider">
               {tReviews.contactTitle}
             </h4>
-            <ul className="space-y-2 text-xs font-medium">
+            <ul className="space-y-2.5 text-xs">
               <li>
                 <a
-                  href={DEALERSHIP_INFO.address.googleMapsUrl}
+                  href={googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-start gap-2 hover:text-[#FF6B00] transition-colors group"
+                  className="flex items-start gap-2 hover:text-[#FF6B00] transition-colors"
                 >
                   <MapPin className="w-4 h-4 text-[#FF6B00] shrink-0 mt-0.5" />
                   <span>
-                    {address} <br />
-                    2660 {city}
+                    {address}<br />
+                    {zipCode} {city}
                   </span>
                 </a>
               </li>
@@ -206,46 +166,46 @@ export const Footer: React.FC<FooterProps> = ({
             </ul>
           </div>
 
-          {/* Col 4: Openingsuren */}
-          <div className="space-y-2 sm:space-y-3">
-            <h4 className="text-white font-black text-xs font-['Outfit',sans-serif] uppercase tracking-widest">
+          <div className="space-y-3">
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider">
               {tReviews.openingHoursTitle}
             </h4>
-            <div className="space-y-1.5 sm:space-y-2 text-xs font-medium">
-              <div className="text-gray-300">
-                {tReviews.monThu}
-              </div>
-              <div className="text-gray-300">
-                {tReviews.friday}
-              </div>
-              <div className="text-gray-300">
-                {tReviews.saturday}
-              </div>
-              <div className="text-gray-400">
-                {tReviews.sunday}
-              </div>
+            <div className="space-y-1.5 text-xs text-zinc-300">
+              <div>{tReviews.monThu}</div>
+              <div>{tReviews.friday}</div>
+              <div>{tReviews.saturday}</div>
+              <div className="text-zinc-500">{tReviews.sunday}</div>
             </div>
-            <div className="pt-1 text-[11px] text-gray-500 font-semibold">
-              BTW & KBO: {DEALERSHIP_INFO.vatNumber}
+            <div className="text-[11px] text-zinc-500 pt-1">
+              KBO / BTW: {DEALERSHIP_INFO.vatNumber}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Lower Copyright Strip */}
-      <div className="border-t border-zinc-800 bg-black/60 py-3 sm:py-4 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 text-[10px] sm:text-[11px] text-gray-500 font-medium">
+      <div className="border-t border-zinc-800 pt-4 pb-20 md:pb-4 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-zinc-500">
           <div>
-            © {new Date().getFullYear()} {DEALERSHIP_INFO.legalName} • {t.rights}
+            © {new Date().getFullYear()} {DEALERSHIP_INFO.legalName} · {t.rights}
           </div>
-
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-4 self-end sm:self-auto">
+            {onOpenDealerLogin && (
+              <button
+                type="button"
+                onClick={onOpenDealerLogin}
+                className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-[#FF6B00] transition-colors cursor-pointer"
+              >
+                <Lock className="w-3.5 h-3.5 text-[#FF6B00]" />
+                <span>{isLoggedIn ? 'Admin Dashboard' : 'Admin inloggen'}</span>
+              </button>
+            )}
             <button
+              type="button"
               onClick={scrollToTop}
-              className="inline-flex items-center gap-1 text-gray-400 hover:text-[#FF6B00] transition-colors cursor-pointer"
+              aria-label="Naar boven"
+              className="inline-flex items-center gap-1 text-zinc-400 hover:text-[#FF6B00] transition-colors cursor-pointer"
             >
-              <span>↑</span>
-              <ArrowUp className="w-3.5 h-3.5" />
+              <ArrowUp className="w-4 h-4" />
             </button>
           </div>
         </div>

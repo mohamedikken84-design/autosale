@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Phone, MessageCircle, CarFront, CalendarCheck } from 'lucide-react';
 import { CARS_DATA } from './data/cars';
 import { DEALERSHIP_INFO, DEFAULT_SHOWROOM_IMAGE } from './data/dealership';
-import { Car, FilterState, Language, Currency, DealershipSettings, UserRole, LeadInquiry, ValuationFormState, TestDriveBooking } from './types';
+import { Car, FilterState, Language, Currency, DealershipSettings, UserRole, LeadInquiry } from './types';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { InventoryGrid } from './components/InventoryGrid';
@@ -11,13 +11,13 @@ import { CarValuationSection } from './components/CarValuationSection';
 import { FinancingCalculator } from './components/FinancingCalculator';
 import { AboutSection } from './components/AboutSection';
 import { ReviewsAndLocation } from './components/ReviewsAndLocation';
-import { TestDriveModal } from './components/TestDriveModal';
 import { FavoritesDrawer } from './components/FavoritesDrawer';
 import { Footer } from './components/Footer';
 import { CookieBanner } from './components/CookieBanner';
 import { DealerLoginModal } from './components/DealerDashboard/DealerLoginModal';
 import { DealerDashboardModal } from './components/DealerDashboard/DealerDashboardModal';
 import { detectVisitorLanguage, saveVisitorLanguage } from './utils/languageDetector';
+import { getTestDriveWhatsAppUrl, getGeneralWhatsAppUrl } from './utils/whatsapp';
 
 const CARS_STORAGE_KEY = 'auto_sale_cars_v2';
 const SETTINGS_STORAGE_KEY = 'auto_sale_settings';
@@ -297,41 +297,6 @@ export default function App() {
     setLeads((prev) => [newLead, ...prev]);
   };
 
-  const handleTestDriveSuccess = (booking: TestDriveBooking) => {
-    const nowMs = Date.now();
-    const newLead: LeadInquiry = {
-      id: 'lead-' + nowMs,
-      date: new Date().toLocaleDateString('nl-BE') + ' ' + new Date().toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' }),
-      createdAt: nowMs,
-      type: 'test-drive',
-      carId: booking.carId,
-      carTitle: booking.carTitle || 'Proefritaanvraag',
-      name: booking.fullName,
-      email: booking.email,
-      phone: booking.phone,
-      message: `Datum: ${booking.date} om ${booking.timeSlot}. Notities: ${booking.remarks || 'Geen extra opmerkingen'}`,
-      status: 'new'
-    };
-    setLeads((prev) => [newLead, ...prev]);
-  };
-
-  const handleValuationSuccess = (data: ValuationFormState, referenceNumber: string) => {
-    const nowMs = Date.now();
-    const newLead: LeadInquiry = {
-      id: 'lead-' + nowMs,
-      date: new Date().toLocaleDateString('nl-BE') + ' ' + new Date().toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' }),
-      createdAt: nowMs,
-      type: 'valuation',
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      carTitle: `${data.brand} ${data.model} (${data.year})`,
-      message: `Ref: ${referenceNumber} | Km: ${data.mileage.toLocaleString()} | Brandstof: ${data.fuel} | Staat: ${data.condition} | Verwacht: ${data.expectedPrice || 'Niet opgegeven'}. Notitie: ${data.notes || 'Geen'}`,
-      status: 'new'
-    };
-    setLeads((prev) => [newLead, ...prev]);
-  };
-
   const handleGeneralContactSubmit = (lead: { name: string; email: string; phone: string; subject: string; message: string }) => {
     const nowMs = Date.now();
     const newLead: LeadInquiry = {
@@ -394,8 +359,6 @@ export default function App() {
 
   // Modals & Drawers state
   const [selectedCarForDetail, setSelectedCarForDetail] = useState<Car | null>(null);
-  const [selectedCarForTestDrive, setSelectedCarForTestDrive] = useState<Car | null>(null);
-  const [isTestDriveModalOpen, setIsTestDriveModalOpen] = useState(false);
   const [isFavoritesDrawerOpen, setIsFavoritesDrawerOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
 
@@ -503,11 +466,6 @@ export default function App() {
     );
   };
 
-  const handleOpenTestDriveModal = (car?: Car) => {
-    setSelectedCarForTestDrive(car || filteredCars[0] || publicCars[0] || null);
-    setIsTestDriveModalOpen(true);
-  };
-
   const handleNavigate = (sectionId: string) => {
     setActiveSection(sectionId);
     const element = document.getElementById(sectionId);
@@ -530,7 +488,6 @@ export default function App() {
       <Navbar
         favoritesCount={favorites.length}
         onOpenFavorites={() => setIsFavoritesDrawerOpen(true)}
-        onOpenTestDrive={() => handleOpenTestDriveModal()}
         onNavigate={handleNavigate}
         activeSection={activeSection}
         currentLang={language}
@@ -548,7 +505,6 @@ export default function App() {
         {/* Hero Section with Live Stock Finder */}
         <Hero
           onExploreStock={() => handleNavigate('stock')}
-          onOpenValuation={() => handleNavigate('overname')}
           onApplyQuickFilter={handleApplyQuickFilter}
           availableBrands={availableBrands}
           totalCarsCount={publicCars.length}
@@ -567,7 +523,6 @@ export default function App() {
           favorites={favorites}
           onToggleFavorite={handleToggleFavorite}
           onSelectCar={(car) => setSelectedCarForDetail(car)}
-          onRequestTestDrive={(car) => handleOpenTestDriveModal(car)}
           availableBrands={availableBrands}
           language={language}
           currency={currency}
@@ -576,9 +531,9 @@ export default function App() {
           onConciergeSubmit={handleConciergeInquiry}
         />
 
-        {/* "Wij Kopen Uw Auto" 3-Step Valuation Wizard */}
-        <CarValuationSection 
-          onValuationSubmit={handleValuationSuccess} 
+        {/* Direct WhatsApp Trade-In / Valuation Section */}
+        <CarValuationSection
+          dealershipSettings={dealershipSettings}
           language={language}
         />
 
@@ -592,7 +547,7 @@ export default function App() {
         {/* Traxio Kwaliteitsgarantie & 25-Year Heritage */}
         <AboutSection
           onExploreStock={() => handleNavigate('stock')}
-          onOpenValuation={() => handleNavigate('overname')}
+          dealershipWhatsapp={dealershipSettings.whatsapp}
           showroomImageUrl={dealershipSettings.showroomImageUrl}
           language={language}
         />
@@ -639,7 +594,7 @@ export default function App() {
         </a>
 
         <a
-          href={`https://wa.me/${(dealershipSettings.whatsapp || DEALERSHIP_INFO.contact.whatsapp).replace(/[^0-9]/g, '')}?text=Hallo%20Auto%20Sale%2C%20ik%20heb%20een%20vraag.`}
+          href={getGeneralWhatsAppUrl(dealershipSettings.whatsapp)}
           target="_blank"
           rel="noopener noreferrer"
           className="flex flex-col items-center justify-center h-full gap-0.5 text-[11px] font-semibold text-zinc-700 hover:text-emerald-700"
@@ -648,14 +603,15 @@ export default function App() {
           <span>WhatsApp</span>
         </a>
 
-        <button
-          type="button"
-          onClick={() => handleOpenTestDriveModal()}
-          className="flex flex-col items-center justify-center h-full gap-0.5 text-[11px] font-bold text-[#FF6B00] cursor-pointer"
+        <a
+          href={getTestDriveWhatsAppUrl(dealershipSettings.whatsapp)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center justify-center h-full gap-0.5 text-[11px] font-bold text-[#FF6B00]"
         >
           <CalendarCheck className="w-4 h-4" />
           <span>Proefrit</span>
-        </button>
+        </a>
       </nav>
 
       {/* GDPR Cookie Consent Banner */}
@@ -668,23 +624,11 @@ export default function App() {
         onClose={() => setSelectedCarForDetail(null)}
         isFavorite={selectedCarForDetail ? favorites.includes(selectedCarForDetail.id) : false}
         onToggleFavorite={handleToggleFavorite}
-        onRequestTestDrive={(car) => handleOpenTestDriveModal(car)}
-        onNavigateToValuation={() => handleNavigate('overname')}
         language={language}
         currency={currency}
         dealershipSettings={dealershipSettings}
         allCars={publicCars}
         onSelectCar={(car) => setSelectedCarForDetail(car)}
-      />
-
-      <TestDriveModal
-        isOpen={isTestDriveModalOpen}
-        onClose={() => setIsTestDriveModalOpen(false)}
-        selectedCar={selectedCarForTestDrive}
-        allCars={publicCars}
-        onBookingSuccess={handleTestDriveSuccess}
-        language={language}
-        dealershipSettings={dealershipSettings}
       />
 
       <FavoritesDrawer
@@ -694,7 +638,6 @@ export default function App() {
         allCars={publicCars}
         onRemoveFavorite={handleToggleFavorite}
         onSelectCar={(car) => setSelectedCarForDetail(car)}
-        onRequestTestDrive={(car) => handleOpenTestDriveModal(car)}
         language={language}
         currency={currency}
         dealershipSettings={dealershipSettings}

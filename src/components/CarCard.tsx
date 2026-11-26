@@ -5,17 +5,19 @@ import {
   ChevronLeft,
   ChevronRight,
   CarFront,
+  MessageCircle,
 } from 'lucide-react';
 import { Car, Language, Currency } from '../types';
 import { TRANSLATIONS } from '../i18n/translations';
 import { formatCurrencyPrice } from '../utils/currency';
+import { getTestDriveWhatsAppUrl } from '../utils/whatsapp';
 
 interface CarCardProps {
   car: Car;
   isFavorite: boolean;
   onToggleFavorite: (carId: string) => void;
   onSelectCar: (car: Car) => void;
-  onRequestTestDrive: (car: Car) => void;
+  whatsappNumber?: string;
   language: Language;
   currency: Currency;
 }
@@ -25,7 +27,7 @@ export const CarCard: React.FC<CarCardProps> = ({
   isFavorite,
   onToggleFavorite,
   onSelectCar,
-  onRequestTestDrive,
+  whatsappNumber,
   language,
   currency,
 }) => {
@@ -202,18 +204,17 @@ export const CarCard: React.FC<CarCardProps> = ({
 
           <div className="flex items-center gap-1.5 shrink-0">
             {!isSold && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRequestTestDrive(car);
-                }}
-                title={t.testDriveButton}
-                aria-label={t.testDriveButton}
-                className="min-h-[42px] min-w-[42px] flex items-center justify-center rounded-xl border border-zinc-200 hover:border-[#FF6B00] hover:text-[#FF6B00] text-zinc-700 transition-colors cursor-pointer"
+              <a
+                href={getTestDriveWhatsAppUrl(whatsappNumber, car)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                title={`${t.testDriveButton} via WhatsApp`}
+                aria-label={`${t.testDriveButton} via WhatsApp`}
+                className="min-h-[42px] min-w-[42px] flex items-center justify-center rounded-xl border border-zinc-200 hover:border-emerald-600 hover:text-emerald-600 text-zinc-700 transition-colors"
               >
-                <CarFront className="w-4 h-4" />
-              </button>
+                <MessageCircle className="w-4 h-4" />
+              </a>
             )}
 
             <button

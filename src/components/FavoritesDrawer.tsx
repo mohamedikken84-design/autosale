@@ -9,6 +9,7 @@ import {
 import { Car, Language, Currency, DealershipSettings } from '../types';
 import { TRANSLATIONS } from '../i18n/translations';
 import { formatCurrencyPrice } from '../utils/currency';
+import { getTestDriveWhatsAppUrl } from '../utils/whatsapp';
 import { DEALERSHIP_INFO } from '../data/dealership';
 
 interface FavoritesDrawerProps {
@@ -18,7 +19,6 @@ interface FavoritesDrawerProps {
   allCars: Car[];
   onRemoveFavorite: (carId: string) => void;
   onSelectCar: (car: Car) => void;
-  onRequestTestDrive: (car: Car) => void;
   language?: Language;
   currency?: Currency;
   dealershipSettings?: DealershipSettings;
@@ -31,7 +31,6 @@ export const FavoritesDrawer: React.FC<FavoritesDrawerProps> = ({
   allCars,
   onRemoveFavorite,
   onSelectCar,
-  onRequestTestDrive,
   language = 'nl',
   currency = 'EUR' as Currency,
   dealershipSettings,
@@ -128,16 +127,16 @@ export const FavoritesDrawer: React.FC<FavoritesDrawerProps> = ({
                   </button>
 
                   {car.status !== 'sold' && (
-                    <button
-                      onClick={() => {
-                        onRequestTestDrive(car);
-                        onClose();
-                      }}
-                      className="p-1.5 bg-zinc-950 hover:bg-[#FF6B00] text-white rounded-lg transition-colors text-xs cursor-pointer"
-                      title={t.requestTestDrive}
+                    <a
+                      href={getTestDriveWhatsAppUrl(dealershipSettings?.whatsapp, car)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 bg-zinc-950 hover:bg-emerald-600 text-white rounded-lg transition-colors text-xs"
+                      title={`${t.requestTestDrive} via WhatsApp`}
+                      aria-label={`${t.requestTestDrive} via WhatsApp`}
                     >
                       <CarFront className="w-3.5 h-3.5" />
-                    </button>
+                    </a>
                   )}
                 </div>
               </div>

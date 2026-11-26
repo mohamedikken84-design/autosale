@@ -7,14 +7,15 @@ import {
   Star,
   CheckCircle2,
   MapPin,
+  MessageCircle,
 } from 'lucide-react';
 import { FilterState, Language, Car as CarType, DealershipSettings } from '../types';
 import { DEFAULT_SHOWROOM_IMAGE } from '../data/dealership';
 import { TRANSLATIONS } from '../i18n/translations';
+import { getTradeInWhatsAppUrl } from '../utils/whatsapp';
 
 interface HeroProps {
   onExploreStock: () => void;
-  onOpenValuation: () => void;
   onApplyQuickFilter: (filters: Partial<FilterState>) => void;
   availableBrands: string[];
   totalCarsCount: number;
@@ -26,7 +27,6 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({
   onExploreStock,
-  onOpenValuation,
   onApplyQuickFilter,
   availableBrands,
   totalCarsCount,
@@ -120,13 +120,15 @@ export const Hero: React.FC<HeroProps> = ({
               <ArrowRight className="w-4 h-4" />
             </button>
 
-            <button
-              type="button"
-              onClick={onOpenValuation}
-              className="w-full sm:w-auto min-h-[46px] px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-semibold text-sm transition-colors cursor-pointer whitespace-nowrap"
+            <a
+              href={getTradeInWhatsAppUrl(dealershipSettings.whatsapp)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto min-h-[46px] px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-semibold text-sm transition-colors inline-flex items-center justify-center gap-2 whitespace-nowrap"
             >
-              {t.sellCar}
-            </button>
+              <MessageCircle className="w-4 h-4 text-emerald-400" />
+              <span>{t.sellCar}</span>
+            </a>
           </div>
         </div>
 

@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, CheckCircle2, Quote, ArrowRight } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, Quote, ArrowRight, MessageCircle } from 'lucide-react';
 import { DEALERSHIP_INFO, DEFAULT_SHOWROOM_IMAGE } from '../data/dealership';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../i18n/translations';
+import { getTradeInWhatsAppUrl } from '../utils/whatsapp';
 
 interface AboutSectionProps {
   onExploreStock: () => void;
-  onOpenValuation: () => void;
+  dealershipWhatsapp?: string;
   showroomImageUrl?: string;
   language?: Language;
 }
 
 export const AboutSection: React.FC<AboutSectionProps> = ({
   onExploreStock,
-  onOpenValuation,
+  dealershipWhatsapp,
   showroomImageUrl,
   language = 'nl',
 }) => {
@@ -100,13 +101,15 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                 <span>{t.exploreBtn}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
-              <button
-                type="button"
-                onClick={onOpenValuation}
-                className="w-full sm:w-auto min-h-[46px] inline-flex items-center justify-center gap-2 bg-white hover:bg-zinc-50 text-zinc-900 font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-xl border border-zinc-200 transition-colors cursor-pointer"
+              <a
+                href={getTradeInWhatsAppUrl(dealershipWhatsapp)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto min-h-[46px] inline-flex items-center justify-center gap-2 bg-white hover:bg-zinc-50 text-zinc-900 font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-xl border border-zinc-200 transition-colors"
               >
+                <MessageCircle className="w-4 h-4 text-emerald-600" />
                 <span>{t.valuationBtn}</span>
-              </button>
+              </a>
             </div>
           </div>
         </div>

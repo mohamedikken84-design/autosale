@@ -7,6 +7,7 @@ import {
 import { Car, Language, Currency, DealershipSettings } from '../types';
 import { TRANSLATIONS } from '../i18n/translations';
 import { formatCurrencyPrice } from '../utils/currency';
+import { getTestDriveWhatsAppUrl, getTradeInWhatsAppUrl } from '../utils/whatsapp';
 import { LightboxModal } from './LightboxModal';
 import { VideoModal } from './VideoModal';
 
@@ -16,8 +17,6 @@ interface CarDetailModalProps {
   onClose: () => void;
   isFavorite: boolean;
   onToggleFavorite: (carId: string) => void;
-  onRequestTestDrive: (car: Car) => void;
-  onNavigateToValuation: () => void;
   language: Language;
   currency: Currency;
   dealershipSettings: DealershipSettings;
@@ -31,8 +30,6 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   onClose,
   isFavorite,
   onToggleFavorite,
-  onRequestTestDrive,
-  onNavigateToValuation,
   language,
   currency,
   dealershipSettings,
@@ -329,16 +326,15 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
                 {/* Action Buttons */}
                 <div className="space-y-3 pt-4">
                   {!isSold && (
-                    <button
-                      onClick={() => {
-                        onRequestTestDrive(car);
-                        onClose();
-                      }}
-                      className="w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-4 px-4 rounded-2xl shadow-md transition-all cursor-pointer"
+                    <a
+                      href={getTestDriveWhatsAppUrl(dealershipSettings.whatsapp, car)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold uppercase text-xs tracking-wider py-4 px-4 rounded-2xl shadow-md transition-all"
                     >
                       <CarFront className="w-4 h-4" />
-                      <span>{t.planTestDrive}</span>
-                    </button>
+                      <span>{t.planTestDrive} (WhatsApp)</span>
+                    </a>
                   )}
 
                   <a
@@ -359,15 +355,15 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
                     <span>{t.callDirect}: {dealershipSettings.phone}</span>
                   </a>
 
-                  <button
-                    onClick={() => {
-                      onNavigateToValuation();
-                      onClose();
-                    }}
-                    className="w-full text-center text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-[#FF6B00] py-2 transition-colors cursor-pointer"
+                  <a
+                    href={getTradeInWhatsAppUrl(dealershipSettings.whatsapp, car)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-1.5 text-center text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-emerald-600 py-2 transition-colors"
                   >
-                    {t.tradeInCta}
-                  </button>
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>{t.tradeInCta}</span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -514,17 +510,15 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
                 >
                   <MessageCircle className="w-5 h-5" />
                 </a>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onRequestTestDrive(car);
-                    onClose();
-                  }}
-                  className="min-h-[44px] inline-flex items-center gap-1.5 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+                <a
+                  href={getTestDriveWhatsAppUrl(dealershipSettings.whatsapp, car)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-h-[44px] inline-flex items-center gap-1.5 bg-[#FF6B00] hover:bg-orange-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
                 >
                   <CarFront className="w-4 h-4" />
                   <span>{t.planTestDrive}</span>
-                </button>
+                </a>
               </div>
             </div>
           )}

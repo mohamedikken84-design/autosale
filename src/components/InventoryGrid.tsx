@@ -22,7 +22,6 @@ interface InventoryGridProps {
   favorites: string[];
   onToggleFavorite: (carId: string) => void;
   onSelectCar: (car: CarType) => void;
-  onRequestTestDrive: (car: CarType) => void;
   availableBrands: string[];
   language: Language;
   currency: Currency;
@@ -39,7 +38,6 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
   favorites,
   onToggleFavorite,
   onSelectCar,
-  onRequestTestDrive,
   availableBrands,
   language,
   currency,
@@ -299,7 +297,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
                 isFavorite={favorites.includes(car.id)}
                 onToggleFavorite={onToggleFavorite}
                 onSelectCar={onSelectCar}
-                onRequestTestDrive={onRequestTestDrive}
+                whatsappNumber={dealershipSettings.whatsapp}
                 language={language}
                 currency={currency}
               />

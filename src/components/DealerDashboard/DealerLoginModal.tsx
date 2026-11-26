@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, UserCheck } from 'lucide-react';
+import { X, ShieldCheck, UserCheck, Eye, EyeOff } from 'lucide-react';
 import { UserRole } from '../../types';
 
 interface DealerLoginModalProps {
@@ -15,6 +15,7 @@ export const DealerLoginModal: React.FC<DealerLoginModalProps> = ({
 }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
@@ -92,15 +93,28 @@ export const DealerLoginModal: React.FC<DealerLoginModalProps> = ({
             <label className="block text-[11px] font-black uppercase tracking-wider text-gray-400 mb-1.5">
               Wachtwoord
             </label>
-            <input
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full min-h-[44px] bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-base sm:text-sm text-white focus:ring-2 focus:ring-[#FF6B00] focus:outline-none tracking-wider"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className={`w-full min-h-[44px] bg-zinc-900 border border-zinc-800 rounded-2xl pl-4 pr-12 py-3 text-base sm:text-sm text-white focus:ring-2 focus:ring-[#FF6B00] focus:outline-none ${
+                  showPassword ? '' : 'tracking-wider'
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Wachtwoord verbergen' : 'Wachtwoord tonen'}
+                title={showPassword ? 'Wachtwoord verbergen' : 'Wachtwoord tonen'}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <div className="pt-3">
